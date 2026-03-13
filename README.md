@@ -1,3 +1,6 @@
+> [!CAUTION]
+> This branch is not maintained anymore.
+
 This folder contains the source code of the NASM Server running on `nasmserver.douxx.tech`.  
 A proper git repository will be set up eventually, this (nasmserver.douxx.tech/source.zip) is a temporary distribution method.
 
