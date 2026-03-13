@@ -112,6 +112,20 @@ _start:
 
     mov r14, rax    ; r14 will contain the client file descriptor
 
+    ; fork()
+    mov rax, 57
+    syscall
+
+    cmp rax, 0
+    jl .fail_accept
+    jg .close_client
+
+    ; we're now in the child process
+    ; child: close the server listening socket
+    mov rax, 3
+    mov rdi, r15
+    syscall
+
     movzx eax, byte [client_addr + 4]   ; first octet
     movzx ebx, byte [client_addr + 5]   ; second
     movzx ecx, byte [client_addr + 6]   ; third
@@ -319,7 +333,12 @@ _start:
     lea r13, [client_ip_str] ; using r12 and r13 to not get it clobbered, shouldnt be a problem since they will be replaced next iteration
     LOG_REQUEST path, r12, r13 
 
-    call .clear_buffers
+    EXIT 0 ; child exits
+
+.close_client:
+    mov rax, 3
+    mov rdi, r14
+    syscall
     jmp .wait
 
 .fail_socket:
@@ -336,4 +355,4 @@ _start:
 
 .fail_accept:
     LOG_ERR log_fail_accept, log_fail_accept_len
-    jmp .wait ; non-fatal, try again
+    jmp .wait ; child exits
