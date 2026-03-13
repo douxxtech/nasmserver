@@ -1,0 +1,13 @@
+# Ignore everything
+*
+
+# But not these (root level)
+!.gitignore
+
+# Allow directories themselves to be traversed
+!*/
+
+# Re-allow the file types inside any folder
+!**/*.md
+!**/*.asm
+!**/LICENSE
