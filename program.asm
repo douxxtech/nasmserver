@@ -112,13 +112,17 @@ _start:
 
     mov r14, rax    ; r14 will contain the client file descriptor
 
+    ; save client_addr to stack before forking to avoid race conds
+    push qword [client_addr + 8]
+    push qword [client_addr]
+
     ; fork()
     mov rax, 57
     syscall
 
     cmp rax, 0
     jl .fail_accept
-    jg .close_client
+    jg .close_client ; small issue, that works, but only calls on each new request. so there are zomb processes until next request.
 
     ; we're now in the child process
     ; child: close the server listening socket
@@ -126,17 +130,17 @@ _start:
     mov rdi, r15
     syscall
 
-    movzx eax, byte [client_addr + 4]   ; first octet
-    movzx ebx, byte [client_addr + 5]   ; second
-    movzx ecx, byte [client_addr + 6]   ; third
-    movzx edx, byte [client_addr + 7]   ; fourth
+    movzx eax, byte [rsp + 4]   ; first octet
+    movzx ebx, byte [rsp + 5]   ; second
+    movzx ecx, byte [rsp + 6]   ; third
+    movzx edx, byte [rsp + 7]   ; fourth
 
     ; rdi = AF_INET (2)
     ; rsi = pointer to sin_addr (client_addr + 4)
     ; rdx = output buffer
     ; rcx = buffer size (16)
     mov     edi, 2
-    lea     rsi, [client_addr + 4]
+    lea     rsi, [rsp + 4]
     lea     rdx, [client_ip_str]
     mov     ecx, 16
     call    inet_ntop
@@ -333,12 +337,28 @@ _start:
     lea r13, [client_ip_str] ; using r12 and r13 to not get it clobbered, shouldnt be a problem since they will be replaced next iteration
     LOG_REQUEST path, r12, r13 
 
+    add rsp, 16
     EXIT 0 ; child exits
 
 .close_client:
+    add rsp, 16
+
     mov rax, 3
     mov rdi, r14
     syscall
+
+.reap_loop:
+    ; wait4(pid, status, opt)
+    mov rax, 61
+    mov rdi, -1
+    xor rsi, rsi
+    mov rdx, 1      ; WNOHANG
+    xor r10, r10
+    syscall
+
+    cmp rax, 0
+    jg .reap_loop ; got a child, try for more
+
     jmp .wait
 
 .fail_socket:
