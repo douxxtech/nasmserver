@@ -64,7 +64,7 @@ section .data
     log_status_200_len  equ $ - log_status_200 - 1
 
     ; other messages
-    log_too_many_concurrent      db "Rejected request: too many concurrent requests", 0xa, 0
+    log_too_many_concurrent      db "Rejected request: too many concurrent requests", 0
     log_too_many_concurrent_len  equ $ - log_too_many_concurrent - 1
 
 ; macros
