@@ -108,6 +108,40 @@ section .data
     pop rax
 %endmacro
 
+; ITOA num_reg, buf_ptr, out_len_reg
+;   Converts an unsigned 64-bit integer to decimal ASCII.
+;   Args:
+;     %1: register containing the number
+;     %2: pointer to a buffer of at least 20 bytes
+;     %3: register to store resulting string length
+;   Clobbers: rax, rbx, rcx, rdx, rdi, rsi
+%macro ITOA 3
+    mov rax, %1
+    lea rdi, [%2 + 19]
+
+    mov byte [rdi], 0
+    xor %3, %3
+%%loop:
+    xor rdx, rdx
+
+    mov rcx, 10
+    div rcx
+    
+    add dl, '0'
+    dec rdi
+    
+    mov [rdi], dl
+    inc %3
+
+    test rax, rax
+    jnz %%loop
+
+    lea rsi, [rdi]
+    lea rdi, [%2]
+    mov rcx, %3
+
+    rep movsb
+%endmacro
 
 ; STRLEN string_ptr, out_reg
 ;   Calculates the length of a null-terminated string.
