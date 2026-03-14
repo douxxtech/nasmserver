@@ -19,7 +19,7 @@ section .data
         dq 0                              ; padding
 
     index_file    db "index.html", 0      ; default file if a directory is fetched (eg / becomes internally /index.txt)
-    max_conns     equ 5                   ; max connections to queue before starting to reject them
+    max_conns     equ 20                  ; max simultaneous connections / threads (max is 255)
     server_name   db "NASMServer/1.0", 0  ; the server name
 
     ; end of the things might want to configure
@@ -48,6 +48,7 @@ section .bss
     last_status         resw 1    ; for logs
     client_ip_str       resb 16   ; "255.255.255.255\0"
     content_length_b    resb 20
+    process_count       resb 1    ; current processes count 
 
 section .text
     global _start
@@ -117,6 +118,29 @@ _start:
 
     mov r14, rax    ; r14 will contain the client file descriptor
 
+.wait_for_slot:
+    movzx rax, byte [process_count]
+    cmp rax, max_conns
+    jl .do_fork
+
+    ; try reaping first in case some just finished
+    call .reap_loop
+
+    movzx rax, byte [process_count]
+    cmp rax, max_conns
+    jl .do_fork
+
+    ; still full so just close the conn
+    mov rax, 3
+    mov rdi, r14
+
+    syscall
+
+    LOG_WARNING log_too_many_concurrent, log_too_many_concurrent_len
+
+    jmp .wait
+
+.do_fork:
     ; save client_addr to stack before forking to avoid race conds
     push qword [client_addr + 8]
     push qword [client_addr]
@@ -424,7 +448,14 @@ _start:
     mov rdi, r14
     syscall
 
+    inc byte [process_count]
+
+    call .reap_loop
+    jmp .wait
+
 .reap_loop:
+    ; reap zombie processes
+
     ; wait4(pid, status, opt)
     mov rax, 61
     mov rdi, -1
@@ -434,9 +465,14 @@ _start:
     syscall
 
     cmp rax, 0
-    jg .reap_loop ; got a child, try for more
+    jle .reap_done ; no child reaped, stop
 
-    jmp .wait
+    dec byte [process_count]
+    jmp .reap_loop
+
+.reap_done:
+    ret
+    
 
 .fail_socket:
     LOG_ERR log_fail_socket, log_fail_socket_len
