@@ -8,7 +8,7 @@
 ;     %1: buffer address
 ;     %2: buffer length
 ;   Returns:
-;     rax = 1 if valid, 0 otherwise
+;     rax = 1 if valid, -400 if invalid, and -405 if the method isn't allowed
 ;   Clobbers: rax, rsi, r8
 %macro IS_HTTP_REQUEST 2
     push rsi
@@ -17,15 +17,15 @@
     xor rax, rax
     mov rsi, %1
 
-    cmp dword [rsi], 0x20544547 ; "GET "
-    jne %%invalid
-
     xor r8, r8
+
 %%find_crlf:
     cmp r8, %2
     jge %%invalid
+
     cmp word [rsi + r8], 0x0a0d ; \r\n
     je %%check_version
+
     inc r8
     jmp %%find_crlf
 
@@ -34,15 +34,30 @@
     jl %%invalid
     cmp dword [rsi + r8 - 8], 0x50545448 ; "HTTP"
     jne %%invalid
+    
     cmp dword [rsi + r8 - 4], 0x302e312f ; "/1.0"
     je %%valid
+
     cmp dword [rsi + r8 - 4], 0x312e312f ; "/1.1"
     jne %%invalid
 
+%%is_http:
+    ; check if its a GET request (static file host, we don't allow other requests)
+    cmp dword [rsi], 0x20544547             ; "GET "
+    jne %%method_not_allowed
+
 %%valid:
     mov rax, 1
+    jmp %%done
+
+%%method_not_allowed:
+    mov rax, -405 ; negative codes are often used for errors in asm
+    jmp %%done
 
 %%invalid:
+    mov rax, -400
+
+%%done:
     pop r8
     pop rsi
 %endmacro

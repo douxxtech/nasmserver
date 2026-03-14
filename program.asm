@@ -30,10 +30,12 @@ section .data
     ; HTTP constants
     crlf             db 0xd, 0xa, 0
 
-    response_200     db "HTTP/1.0 200 OK", 0
+    response_405     db "HTTP/1.0 405 Method Not Allowed", 0
     response_404     db "HTTP/1.0 404 Not Found", 0
     response_403     db "HTTP/1.0 403 Forbidden", 0
     response_400     db "HTTP/1.0 400 Bad Request", 0
+    response_200     db "HTTP/1.0 200 OK", 0
+
 
     connection_close db "Connection: close", 0
 
@@ -151,9 +153,18 @@ _start:
 
     IS_HTTP_REQUEST request, 1024
 
-    cmp rax, 1
-    jne .bad_request
+    cmp rax, 0
+    je .get
 
+    cmp rax, -405
+    je .method_not_allowed
+
+    cmp rax, -400
+    je .bad_request
+
+    jmp .forbidden ; in case i add a new code and forgot to implement it here
+
+.get:
     ; prepend '.' so it becomes a relative path
     mov rdi, path
     mov byte [rdi], '.'
@@ -228,16 +239,16 @@ _start:
     mov word [last_status], 200
     jmp .end
 
-.bad_request:
+.method_not_allowed:
     lea r13, [response]
     lea r12, [response]
 
-    mov rdi, 400
+    mov rdi, 405
     call .write_header
 
     sub r12, r13
 
-    mov word [last_status], 400
+    mov word [last_status], 405
     jmp .send
 
 .not_found: 
@@ -264,9 +275,25 @@ _start:
     mov word [last_status], 403
     jmp .send
 
+.bad_request:
+    lea r13, [response]
+    lea r12, [response]
+
+    mov rdi, 400
+    call .write_header
+
+    sub r12, r13
+
+    mov word [last_status], 400
+    jmp .send
+
 .write_header:
-    ; rdi: status code (200, 400, 403, or 404)
+    ; rdi: status code (200, 400, 403, 404 or 405)
     ; appends the HTTP header to the 'response' buffer
+
+    cmp rdi, 405
+    je .write_405
+
     cmp rdi, 404
     je .write_404
 
@@ -277,6 +304,11 @@ _start:
     je .write_400
 
     jmp .write_200
+
+.write_405:
+    AAPPEND r12, response_405
+    AAPPEND r12, crlf
+    jmp .write_common_headers
 
 .write_404:
     AAPPEND r12, response_404
