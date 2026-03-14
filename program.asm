@@ -101,9 +101,9 @@ _start:
 
     LOG_INFO log_listening_port, log_listening_port_len
 
-.wait: ; from here, we're NOT stopping the program anymore
-    ; accept(fd, sockaddr, addrlen) -> rax client fd (to use to write the resp)
-    ; blocks until a connection arrives
+.wait:  ; from here, we're NOT stopping the program anymore
+        ; accept(fd, sockaddr, addrlen) -> rax client fd (to use to write the resp)
+        ; blocks until a connection arrives
     mov rax, 43
     mov rdi, r15
     mov rsi, client_addr
