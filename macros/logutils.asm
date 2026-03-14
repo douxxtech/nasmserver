@@ -19,7 +19,7 @@ section .data
     log_prefix_err_len     equ $ - log_prefix_err - 1
 
     log_prefix_warning     db "[WARNING] ", 0
-    log_prefix_warning_len equ $ - log_prefix_err - 1
+    log_prefix_warning_len equ $ - log_prefix_warning - 1
 
     ; startup / fatal messages
     log_listening_port      db "Listening on port 80", 0
