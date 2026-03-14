@@ -19,9 +19,10 @@ section .data
         dq 0                              ; padding
 
     ; server conf
-    index_file    db "index.html", 0      ; default file if a directory is fetched (eg / becomes internally /index.txt)
-    max_conns     equ 20                  ; max simultaneous connections / threads (max is 255)
-    server_name   db "NASMServer/1.0", 0  ; the server name
+    document_root  db "/var/www/html", 0                  ; document root, no trailing slash !
+    index_file     db "index.html", 0      ; default file if a directory is fetched (eg / becomes internally /index.txt)
+    max_conns      equ 20                  ; max simultaneous connections / threads (max is 255)
+    server_name    db "NASMServer/1.0", 0  ; the server name
 
     ; errordocs files
     errordoc_405  db "./errordocs/405.html", 0
@@ -196,29 +197,41 @@ _start:
     cmp rax, -400
     je .bad_request
 
-    jmp .forbidden ; in case i add a new code and forgot to implement it here
+    jmp .forbidden          ; in case i add a new code and forgot to implement it here
 
 .get:
-    ; prepend '.' so it becomes a relative path
-    mov rdi, path
-    mov byte [rdi], '.'
+    ; prepend document_root so the path is relative to it
+    lea rsi, [document_root]
+    lea rdi, [path]
 
-    lea rdi, [path + 1]
+.copy_docroot:
+    mov al, [rsi]
 
-    PARSE_HTTP_PATH request, 1024, rdi, rcx
-    cmp rcx, 0 ; length will be zero if it contains a path traversal = 403
+    test al, al
+    jz .copy_docroot_done
+
+    mov [rdi], al
+    inc rsi
+    inc rdi
+
+    jmp .copy_docroot
+
+.copy_docroot_done:
+    lea rax, [path]
+    sub rdi, rax                             ; rdi = docroot length
+    mov rbx, rdi                             ; rbx = docroot length for offsetting
+
+    lea rdi, [path + rbx]
+    PARSE_HTTP_PATH request, 1024, rdi, rcx  
+    cmp rcx, 0
     jle .forbidden
 
-    mov byte [path + rcx + 1], 0    ; nul terminate the path
+    add rcx, rbx                             ; full length = docroot + http path
 
-    ; if ends with '/', append "index.txt"
+    mov byte [path + rcx + 1], 0
+
     cmp byte [path + rcx], '/'
     jne .check_exists
-
-    ; copy index_file into path after the trailing slash
-    lea rsi, [index_file]
-    lea rdi, [path + rcx + 1]
-
 
 .add_index:
     mov al, [rsi]
