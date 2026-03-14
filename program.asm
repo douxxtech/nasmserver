@@ -24,11 +24,12 @@ section .data
     max_conns      equ 20                  ; max simultaneous connections / threads (max is 255)
     server_name    db "NASMServer/1.0", 0  ; the server name
 
-    ; errordocs files
-    errordoc_405  db "./errordocs/405.html", 0
-    errordoc_404  db "./errordocs/404.html", 0
-    errordoc_403  db "./errordocs/403.html", 0
-    errordoc_400  db "./errordocs/400.html", 0
+    ; errordocs files, relatively to the document_root (leave empty for none)
+    ; start them with a slash !
+    errordoc_405  db "/errordocs/405.html", 0
+    errordoc_404  db "/errordocs/404.html", 0
+    errordoc_403  db "/errordocs/403.html", 0
+    errordoc_400  db "/errordocs/400.html", 0
 
     ; end of the things might want to configure
 
@@ -58,6 +59,10 @@ section .bss
     content_length_b    resb 20
     process_count       resb 1    ; current processes count
     file_to_serve       resq 1    ; pointer to path to serve, or 0 for none
+    errordoc_405_path   resb 256
+    errordoc_404_path   resb 256
+    errordoc_403_path   resb 256
+    errordoc_400_path   resb 256
 
 section .text
     global _start
@@ -112,6 +117,12 @@ _start:
     syscall
 
     LOG_INFO log_listening_port, log_listening_port_len
+
+    BUILDPATH errordoc_405_path, document_root, errordoc_405
+    BUILDPATH errordoc_404_path, document_root, errordoc_404
+    BUILDPATH errordoc_403_path, document_root, errordoc_403
+    BUILDPATH errordoc_400_path, document_root, errordoc_400
+
 
 .wait:  ; from here, we're NOT stopping the program anymore
         ; accept(fd, sockaddr, addrlen) -> rax client fd (to use to write the resp)
@@ -296,7 +307,7 @@ _start:
 .method_not_allowed:
     lea r13, [response]
     lea r12, [response]
-    mov qword [file_to_serve], errordoc_405
+    mov qword [file_to_serve], errordoc_405_path
 
     mov rdi, 405
     call .write_header
@@ -309,7 +320,7 @@ _start:
 .not_found:
     lea r13, [response]
     lea r12, [response]
-    mov qword [file_to_serve], errordoc_404
+    mov qword [file_to_serve], errordoc_404_path
 
 
     mov rdi, 404
@@ -323,7 +334,7 @@ _start:
 .forbidden:
     lea r13, [response]
     lea r12, [response]
-    mov qword [file_to_serve], errordoc_403
+    mov qword [file_to_serve], errordoc_403_path
 
     mov rdi, 403
     call .write_header
@@ -336,7 +347,7 @@ _start:
 .bad_request:
     lea r13, [response]
     lea r12, [response]
-    mov qword [file_to_serve], errordoc_400
+    mov qword [file_to_serve], errordoc_400_path
 
     mov rdi, 400
     call .write_header
@@ -396,6 +407,10 @@ _start:
 .header_content_type:
     ; content type detection
     mov rdi, [file_to_serve]
+
+    cmp byte [rdi], 0
+    je .header_content_length
+
     GET_MIME_TYPE rdi, rbx ; content type will be in rsi
 
     mov rdi, rbx ; aappend doesn't clobbers rdi
@@ -406,6 +421,10 @@ _start:
 .header_content_length:
     ; very similar to the previous one
     mov rdi, [file_to_serve]
+
+    cmp byte [rdi], 0
+    je .header_conn_close
+
     FILE_SIZE rdi, rbx
 
     cmp rbx, 0   ; rbx < 0 means that it failed, skipping header

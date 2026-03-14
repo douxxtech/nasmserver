@@ -166,6 +166,29 @@ section .data
     pop rax
 %endmacro
 
+; BUILDPATH dest, base, suffix
+;   Concatenates base and suffix into dest (null-terminated result).
+;   If the base OR suffix string is empty, it'll leave the buffer untouched.
+;   Args:
+;     %1: destination buffer
+;     %2: base string (null-terminated)
+;     %3: suffix string (null-terminated)
+;   Clobbers: whatever AAPPEND clobbers (rax, rbx, rsi, rcx)
+%macro BUILDPATH 3
+
+    ; if either part is empty, leave dest empty and bail
+    cmp byte [%2], 0
+    je %%done
+    cmp byte [%3], 0
+    je %%done
+
+    lea r8, [%1]
+    AAPPEND r8, %2
+    AAPPEND r8, %3
+    mov byte [r8], 0  ; null-terminate
+%%done:
+%endmacro
+
 ; APPEND dest, src, length
 ;   Copies `length` bytes from src into dest, advancing dest.
 ;   Args:
