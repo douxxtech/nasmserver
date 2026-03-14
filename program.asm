@@ -13,13 +13,13 @@ section .data
 
     ; socket setup
     sockaddr:
-        dw 2                              ; AF_INET (ipv4)
-        dw 0x5000                         ; port 80 big-endian
-        dd 0                              ; 0.0.0.0 = listen on all interfaces
-        dq 0                              ; padding
+        dw 2                               ; AF_INET (ipv4)
+        dw 0x5000                          ; port 80 big-endian
+        dd 0                               ; 0.0.0.0 = listen on all interfaces
+        dq 0                               ; padding
 
     ; server conf
-    document_root  db "/var/www/html", 0                  ; document root, no trailing slash !
+    document_root  db "/var/www/html", 0   ; document root, no trailing slash !
     index_file     db "index.html", 0      ; default file if a directory is fetched (eg / becomes internally /index.txt)
     max_conns      equ 20                  ; max simultaneous connections / threads (max is 255)
     server_name    db "NASMServer/1.0", 0  ; the server name
