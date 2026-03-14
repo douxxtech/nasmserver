@@ -4,6 +4,8 @@
 %include "./macros/logutils.asm"
 %include "./macros/whatmimeisthat.asm"
 
+%include "./labels/startupchecks.asm"
+
 extern inet_ntop ; to process the client IP address
 
 ; program.asm - HTTP/1.0 server entry point
@@ -89,6 +91,12 @@ section .text
 ;   r12 = response buffer write position / last status code (at .end, for logging)
 ;   r11 = file fd (when serving a file)
 _start:
+    PRINTN log_started_nasmserver, log_started_nasmserver_len
+
+    BUILDPATH errordoc_405_path, document_root, errordoc_405
+    BUILDPATH errordoc_404_path, document_root, errordoc_404
+    BUILDPATH errordoc_403_path, document_root, errordoc_403
+    BUILDPATH errordoc_400_path, document_root, errordoc_400
     
     ; build sockaddr from port/interface
     movzx eax, word [port]
@@ -98,6 +106,9 @@ _start:
     mov eax, [interface]
     mov dword [sockaddr + 4], eax
 
+    call startup_checks
+
+.start_server:
     ; socket(domain, type, protocol)
     mov rax, 41
     mov rdi, 2      ; ipv4
@@ -139,6 +150,8 @@ _start:
     syscall
 
     ; this mess prints the port log
+    PRINT_TIMESTAMP
+    
     PRINT log_prefix_info, log_prefix_info_len
     PRINT log_listening_port, log_listening_port_len
 
@@ -147,11 +160,6 @@ _start:
     ITOA rbx, log_port_buf, r9
 
     PRINTN log_port_buf, r9
-
-    BUILDPATH errordoc_405_path, document_root, errordoc_405
-    BUILDPATH errordoc_404_path, document_root, errordoc_404
-    BUILDPATH errordoc_403_path, document_root, errordoc_403
-    BUILDPATH errordoc_400_path, document_root, errordoc_400
 
 
 .wait:  ; from here, we're NOT stopping the program anymore
