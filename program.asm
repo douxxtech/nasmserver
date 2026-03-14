@@ -25,10 +25,10 @@ section .data
 
     ; errordocs files, relatively to the document_root (leave empty for none)
     ; start them with a slash !
-    errordoc_405  db "/errordocs/405.html", 0
-    errordoc_404  db "/errordocs/404.html", 0
-    errordoc_403  db "/errordocs/403.html", 0
-    errordoc_400  db "/errordocs/400.html", 0
+    errordoc_405  db "/@errordocs/405.html", 0
+    errordoc_404  db "/@errordocs/404.html", 0
+    errordoc_403  db "/@errordocs/403.html", 0
+    errordoc_400  db "/@errordocs/400.html", 0
 
     ; end of the things might want to configure
 
