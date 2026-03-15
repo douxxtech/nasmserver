@@ -124,7 +124,8 @@ Macros live in `macros/`. Labels (callable procedures using `call`) live in `lab
 ## 5. Alignment
 
 Repeating structures should be visually aligned by column when they appear in groups.
-The same rule as inline comments applies: align to the longest entry + a few spaces.
+The same rule as inline comments applies: align to the longest entry + a few spaces.  
+We recommend two spaces after the longest element as padding.
 
 This applies to (non-exhaustive):
 
@@ -136,9 +137,9 @@ log_fail_bind_len  equ $ - log_fail_bind - 1
 
 **`.bss` reservations:**
 ```assembly
-port            resw 1    ; port number (host byte order)
-max_conns       resb 1    ; max simultaneous connections (max 255)
-document_root   resb 256  ; document root, no trailing slash
+port           resw 1    ; port number (host byte order)
+max_conns      resb 1    ; max simultaneous connections (max 255)
+document_root  resb 256  ; document root, no trailing slash
 ```
 
 **Macro calls with many arguments:**
@@ -150,9 +151,9 @@ ENV_DEFAULT env_path_buf, key_name,    server_name,   64,  default_name
 
 **Lookup tables:**
 ```assembly
-dq mime_ext_html,     mime_type_html
-dq mime_ext_htm,      mime_type_html
-dq mime_ext_css,      mime_type_css
+dq mime_ext_html,  mime_type_html
+dq mime_ext_htm,   mime_type_html
+dq mime_ext_css,   mime_type_css
 ```
 
 ## 6. Commits
