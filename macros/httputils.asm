@@ -34,7 +34,7 @@
     jl %%invalid
     cmp dword [rsi + r8 - 8], 0x50545448 ; "HTTP"
     jne %%invalid
-    
+
     cmp dword [rsi + r8 - 4], 0x302e312f ; "/1.0"
     je %%valid
 
@@ -71,18 +71,18 @@
 ;     %4: register to store path length (0 if nothing extracted)
 ;   Clobbers: rax, rsi, rdi, rcx, r8, r9
 %macro PARSE_HTTP_PATH 4
-    xor %4, %4      ; default path length = 0
+    xor %4, %4   ; default path length = 0
     mov rsi, %1
     mov rdi, %3
     mov rcx, %2
 
-    xor r8, r8      ; offset
+    xor r8, r8   ; offset
 
 %%skip_method:
     cmp r8, rcx
     jge %%parse_done
     mov al, [rsi + r8]
-    cmp al, 0x20    ; space
+    cmp al, 0x20        ; space
     je %%skip_spaces
     inc r8
     jmp %%skip_method
@@ -98,16 +98,17 @@
 
 %%copy_path:
     xor r9, r9      ; path length counter
+    
 %%copy_loop:
     cmp r8, rcx
     jge %%parse_done
     mov al, [rsi + r8]
-    cmp al, 0x20    ; space = end of path (HTTP/version follows)
+    cmp al, 0x20        ; space = end of path (HTTP/version follows)
     je %%parse_done
     mov [rdi + r9], al
     inc r8
     inc r9
-    cmp r9, 255     ; sanity check, max path length
+    cmp r9, 255         ; sanity check, max path length
     jge %%parse_done
     jmp %%copy_loop
 
@@ -123,15 +124,15 @@
     cmp byte [rdi + r8], '.'
     jne %%traversal_next
 
-    cmp byte [rdi + r8 + 1], '.' ; [r8, r8 + 1], if both are '.', a path traversal is detected
-    je %%path_bad                ; <- traversal detected
+    cmp byte [rdi + r8 + 1], '.'  ; [r8, r8 + 1], if both are '.', a path traversal is detected
+    je %%path_bad                 ; <- traversal detected
 
 %%traversal_next:
     inc r8
     jmp %%traversal_loop
 
 %%path_bad:
-    xor r9 , r9 ; length = 0 if bad path
+    xor r9, r9  ; length = 0 if bad path
 
 %%path_ok:
     mov %4, r9
