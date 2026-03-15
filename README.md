@@ -36,7 +36,7 @@ cp .env.example .env
 
 ## Build from source
 
-**Requirements:** `nasm` `gcc` `binutils`
+**Requirements:** `nasm` `binutils`
 
 ```bash
 bash buildasm.sh program.asm
