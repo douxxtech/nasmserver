@@ -1,12 +1,12 @@
 ; sysutils.asm - Utility macros for x86_64 Linux
 
 section .data
-    sysutils_newline db 0xa
+    sysutils_newline  db 0xa
 
-    sysutils_ts_fmt      db "%H:%M:%S", 0     ; strftime format
-    sysutils_ts_buf      db 0, 0, 0, 0, 0, 0, 0, 0, 0  ; "HH:MM:SS\0"
-    sysutils_timespec    dq 0, 0              ; tv_sec, tv_nsec
-    sysutils_tm_buf      times 64 db 0        ; struct tm
+    sysutils_ts_fmt    db "%H:%M:%S", 0              ; strftime format
+    sysutils_ts_buf    db 0, 0, 0, 0, 0, 0, 0, 0, 0  ; "HH:MM:SS\0"
+    sysutils_timespec  dq 0, 0                       ; tv_sec, tv_nsec
+    sysutils_tm_buf    times 64 db 0                 ; struct tm
 
 ; PRINT buffer, length
 ;   Writes a buffer to stdout.
@@ -20,6 +20,7 @@ section .data
     push rsi
     push rdx
 
+    ; write(fd, buffer, count)
     mov rax, 1      ; sys_write
     mov rdi, 1      ; stdout
     mov rsi, %1
@@ -45,6 +46,7 @@ section .data
     push rsi
     push rdx
 
+    ; write(fd, buffer, count)
     mov rax, 1      ; sys_write
     mov rdi, %1
     mov rsi, %2
@@ -69,14 +71,16 @@ section .data
     push rsi
     push rdx
 
+    ; write(fd, buffer, count)
     mov rax, 1      ; sys_write
     mov rdi, 1      ; stdout
     mov rsi, %1
     mov rdx, %2
     syscall
 
+    ; write(fd, buffer, count)
     mov rax, 1      ; newline
-    mov rdi, 1
+    mov rdi, 1      ; stdout
     mov rsi, sysutils_newline
     mov rdx, 1
     syscall
@@ -96,8 +100,9 @@ section .data
     push rsi
     push rdx
 
-    mov rax, 1      ; sys_write
-    mov rdi, 1      ; stdout
+    ; write(fd, buffer, count)
+    mov rax, 1                 ; sys_write
+    mov rdi, 1                 ; stdout
     mov rsi, sysutils_newline
     mov rdx, 1
     syscall
@@ -121,15 +126,16 @@ section .data
 
     mov byte [rdi], 0
     xor %3, %3
+
 %%loop:
     xor rdx, rdx
 
     mov rcx, 10
     div rcx
-    
+
     add dl, '0'
     dec rdi
-    
+
     mov [rdi], dl
     inc %3
 
@@ -212,6 +218,7 @@ section .data
     AAPPEND r8, %2
     AAPPEND r8, %3
     mov byte [r8], 0  ; null-terminate
+
 %%done:
 %endmacro
 
@@ -227,15 +234,20 @@ section .data
 %macro APPEND 3
     mov rsi, %2
     mov rcx, %3
+
 %%loop:
     cmp rcx, 0
     je %%done
+
     mov al, [rsi]
     mov [%1], al
+
     inc rsi
     inc %1
+
     dec rcx
     jmp %%loop
+
 %%done:
 %endmacro
 
@@ -254,12 +266,16 @@ section .data
 %%loop:
     cmp rcx, 0
     je %%done
+
     mov al, [rsi]
     mov [%1], al
+
     inc rsi
     inc %1
+
     dec rcx
     jmp %%loop
+    
 %%done:
 %endmacro
 
@@ -282,13 +298,11 @@ section .data
     mov %1, [rsp]
 %endmacro
 
-; =============================================
 ; EXIT status
 ;   Exits the program with the given status.
 ;   Args:
 ;     %1: exit status
 ;   Clobbers: rax, rdi
-; =============================================
 %macro EXIT 1
     mov rax, 60     ; sys_exit
     mov rdi, %1     ; exit status
