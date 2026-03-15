@@ -1,8 +1,7 @@
 ; fileutils.asm - File operation macros for x86_64 Linux
 
 section .bss
-    stat resb 144   ; struct stat is 144 bytes on x86_64 linux (for content length)
-
+    stat  resb 144  ; struct stat is 144 bytes on x86_64 linux (for content length)
 
 ; FILE_EXISTS path
 ;   Checks whether a path exists and what it is.
@@ -18,54 +17,53 @@ section .bss
     push rdi
     push rsi
 
-    ; stat(path, buffer)
+    ; get file metadata to check existence and type
+    ; stat(path, statbuf)
     mov rax, 4
     mov rdi, %1
     lea rsi, [stat]
-
     syscall
 
     cmp rax, 0
-    jl %%not_found       ; stat failed = doesn't exist
+    jl %%not_found        ; stat failed = doesn't exist
 
     ; check st_mode at offset 24, mask the file type bits
-    mov rax, [stat + 24]  
+    mov rax, [stat + 24]
     and rax, 0xF000
 
-    cmp rax, 0x8000      ; S_IFREG
+    cmp rax, 0x8000       ; S_IFREG
     je %%is_file
 
-    cmp rax, 0x4000      ; S_IFDIR
+    cmp rax, 0x4000       ; S_IFDIR
     je %%is_dir
 
     ; exists but some other obscure type, just continue
 
 %%is_file:
-    ; next check read permission 
 
-    ; access(path, R_OK)
-    mov rax, 21          ; sys_access
+    ; check read permission on the file
+    ; access(path, mode)
+    mov rax, 21         ; sys_access
     mov rdi, %1
-    mov rsi, 4           ; R_OK
-
+    mov rsi, 4          ; R_OK
     syscall
 
     cmp rax, 0
     jne %%not_readable
 
-    mov rax, 1           ; exists, is a file, is readable
+    mov rax, 1          ; exists, is a file, is readable
     jmp %%done
 
 %%is_dir:
-    mov rax, 2           ; exists, is a directory
+    mov rax, 2          ; exists, is a directory
     jmp %%done
 
 %%not_readable:
-    mov rax, 3           ; exists but not readable
+    mov rax, 3          ; exists but not readable
     jmp %%done
 
 %%not_found:
-    mov rax, 0           ; does not exist
+    mov rax, 0          ; does not exist
 
 %%done:
     pop rsi
@@ -82,7 +80,8 @@ section .bss
     push rdi
     push rsi
 
-    ; stat(path, buffer)
+    ; get file metadata to read st_size
+    ; stat(path, statbuf)
     mov rax, 4
     mov rdi, %1
     lea rsi, [stat]
@@ -91,7 +90,7 @@ section .bss
     cmp rax, 0
     jl %%fail
 
-    mov %2, [stat + 48] ; st_size is at offset 48 in struct stat
+    mov %2, [stat + 48]  ; st_size is at offset 48 in struct stat
     jmp %%done
 
 %%fail:
@@ -112,7 +111,9 @@ section .bss
 ;     rax = bytes read, or negative errno on error
 ;   Clobbers: rax, rdi, rsi, rdx
 %macro READ_FILE 3
-    mov rax, 0      ; sys_read
+
+    ; read(fd, buffer, count)
+    mov rax, 0   ; sys_read
     mov rdi, %1
     mov rsi, %2
     mov rdx, %3
@@ -127,9 +128,11 @@ section .bss
 ;     rax = file descriptor, or negative errno on error
 ;   Clobbers: rax, rdi, rsi, rdx
 %macro OPEN_FILE 1
-    mov rax, 2      ; sys_open
+
+    ; open(path, flags, mode)
+    mov rax, 2   ; sys_open
     mov rdi, %1
-    mov rsi, 0      ; O_RDONLY
+    mov rsi, 0   ; O_RDONLY
     mov rdx, 0
     syscall
 %endmacro
