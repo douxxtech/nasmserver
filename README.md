@@ -60,7 +60,7 @@ Copy `env.example` to `.env` and edit as needed. All keys are optional, and defa
 | `DOCUMENT_ROOT` | `.` | Document root directory, no trailing slash |
 | `INDEX_FILE` | `index.html` | File served when a directory is requested |
 | `MAX_REQUESTS` | `20` | Max simultaneous connections (1–255) |
-| `SERVER_NAME` | `NASMServer/1.0` | Value for the `Server:` response header |
+| `SERVER_NAME` | `NASMServer/ver` | Value for the `Server:` response header |
 | `ERRORDOC_400` | *(empty)* | Error page path, relative to `DOCUMENT_ROOT`, must start with `/` |
 | `ERRORDOC_403` | *(empty)* | Same, for 403 |
 | `ERRORDOC_404` | *(empty)* | Same, for 404 |
