@@ -16,45 +16,45 @@ section .data
 
     ; socket setup
     sockaddr:
-        dw 2               ; AF_INET (ipv4)
-        dw 0x5000          ; port 80 big-endian                  (edited at runtime)
-        dd 0               ; 0.0.0.0 = listen on all interfaces
-        dq 0               ; padding
+        dw 2       ; AF_INET (ipv4)
+        dw 0x5000  ; port 80 big-endian (edited at runtime)
+        dd 0       ; 0.0.0.0 = listen on all interfaces
+        dq 0       ; padding
 
-    sockopt         dd 1   ; value for SO_REUSEADDR
-    client_addr_len dd 16  ; data directive for accept() (at .wait)
+    sockopt                  dd 1   ; value for SO_REUSEADDR
+    client_addr_len          dd 16  ; data directive for accept() (at .wait)
 
     ; HTTP constants
-    crlf                    db 0xd, 0xa, 0
+    crlf                     db 0xd, 0xa, 0
 
-    response_405            db "HTTP/1.0 405 Method Not Allowed", 0
-    response_404            db "HTTP/1.0 404 Not Found", 0
-    response_403            db "HTTP/1.0 403 Forbidden", 0
-    response_400            db "HTTP/1.0 400 Bad Request", 0
-    response_200            db "HTTP/1.0 200 OK", 0
+    response_405             db "HTTP/1.0 405 Method Not Allowed", 0
+    response_404             db "HTTP/1.0 404 Not Found", 0
+    response_403             db "HTTP/1.0 403 Forbidden", 0
+    response_400             db "HTTP/1.0 400 Bad Request", 0
+    response_200             db "HTTP/1.0 200 OK", 0
 
-    server_header           db "Server: ", 0
-    content_length_header   db "Content-Length: ", 0
-    connection_close_header db "Connection: close", 0
+    server_header            db "Server: ", 0
+    content_length_header    db "Content-Length: ", 0
+    connection_close_header  db "Connection: close", 0
 
 section .bss
     ; network
-    client_addr         resb 16
-    client_ip_str       resb 16    ; "255.255.255.255\0"
+    client_addr       resb 16
+    client_ip_str     resb 16    ; "255.255.255.255\0"
 
     ; request / response
-    request             resb 1024
-    response            resb 1024
+    request           resb 1024
+    response          resb 1024
 
     ; path handling
-    path                resb 256
-    file_to_serve       resq 1     ; pointer to path to serve, or 0 for none
+    path              resb 256
+    file_to_serve     resq 1     ; pointer to path to serve, or 0 for none
 
     ; misc
-    last_status         resw 1     ; for logs
-    content_length_b    resb 20
-    process_count       resb 1     ; current processes count
-    log_port_buf        resb 8     ; "65535\n\0" worst case
+    last_status       resw 1     ; for logs
+    content_length_b  resb 20
+    process_count     resb 1     ; current processes count
+    log_port_buf      resb 8     ; "65535\n\0" worst case
 
 section .text
     global _start
@@ -78,30 +78,37 @@ _start:
     call startup_checks  ; from labels/startupchecks.asm
 
 .start_server:
+
+    ; create the server TCP socket
     ; socket(domain, type, protocol)
     mov rax, 41
-    mov rdi, 2      ; ipv4
-    mov rsi, 1      ; stream
-    mov rdx, 0      ; tcp
+    mov rdi, 2            ; ipv4
+    mov rsi, 1            ; stream
+    mov rdx, 0            ; tcp
     syscall
 
     cmp rax, 0
     jl .fail_socket
 
-    mov r15, rax    ; r15 will hold the socket fd
+    mov r15, rax          ; r15 will hold the socket fd
 
-    ; setsockopt(fd, SOL_SOCKET=1, SO_REUSEADDR=2, &opt, 4)
+    ; allow reuse of the address so we can restart without waiting for TIME_WAIT
+    ; setsockopt(fd, level, optname, optval, optlen)
     mov rax, 54
     mov rdi, r15
-    mov rsi, 1      ; SOL_SOCKET
-    mov rdx, 2      ; SO_REUSEADDR
+    mov rsi, 1            ; SOL_SOCKET
+    mov rdx, 2            ; SO_REUSEADDR
     mov r10, sockopt
     mov r8,  4
     syscall
 
     cmp rax, 0
-    jne .fail_setsockopt
+    jne .fail_setsockopt  ;
 
+
+.bind_port:
+
+    ; bind the socket to the configured port and interface
     ; bind(fd, sockaddr, addrlen)
     mov rax, 49
     mov rdi, r15
@@ -112,6 +119,7 @@ _start:
     cmp rax, 0
     jl .fail_bind
 
+    ; start listening for incoming connections
     ; listen(fd, backlog)
     mov rax, 50
     mov rdi, r15
@@ -120,7 +128,7 @@ _start:
 
     ; this mess prints the port log
     PRINT_TIMESTAMP
-    
+
     PRINT log_prefix_info, log_prefix_info_len
     PRINT log_listening_port, log_listening_port_len
 
@@ -131,10 +139,11 @@ _start:
     PRINTN log_port_buf, r9
 
 
-.wait:  ; from here, we're NOT stopping the program anymore
-    
-    ; accept(fd, sockaddr, addrlen) -> rax client fd (to use to write the resp)
-    ; blocks until a connection arrives
+.wait:  
+    ; from here, we're NOT stopping the program anymore
+
+    ; block until a new connection arrives, then store the client fd in r14
+    ; accept(fd, sockaddr, addrlen)
     mov rax, 43
     mov rdi, r15
     mov rsi, client_addr
@@ -144,7 +153,7 @@ _start:
     cmp rax, 0
     jl .fail_accept
 
-    mov r14, rax    ; r14 will contain the client file descriptor
+    mov r14, rax              ; r14 will contain the client file descriptor
 
 .wait_for_slot:
     movzx rax, byte [process_count]
@@ -158,10 +167,12 @@ _start:
     cmp al, [max_conns]
     jl .do_fork
 
-    ; still full so just close the conn
+    ; still full, drop the connection and warn
+
+    ; close the file
+    ; close(fd)
     mov rax, 3
     mov rdi, r14
-
     syscall
 
     LOG_WARNING log_too_many_concurrent, log_too_many_concurrent_len
@@ -173,34 +184,39 @@ _start:
     push qword [client_addr + 8]
     push qword [client_addr]
 
+    ; spawn a child process to handle this request
     ; fork()
     mov rax, 57
     syscall
 
     cmp rax, 0
     jl .fail_accept
-    jg .close_client ; small issue, that works, but only calls on each new request. so there are zomb processes until next request.
+
+    ; small issue: .close_client only gets called on each new request,
+    ; so zombie processes linger until the next connection comes in
+    jg .close_client
 
     ; we're now in the child process
-    ; child: close the server listening socket
+
+    ; child doesn't need the server listening socket
+    ; close(fd)
     mov rax, 3
     mov rdi, r15
     syscall
 
-    movzx eax, byte [rsp + 4]   ; first octet
-    movzx ebx, byte [rsp + 5]   ; second
-    movzx ecx, byte [rsp + 6]   ; third
-    movzx edx, byte [rsp + 7]   ; fourth
+    movzx eax, byte [rsp + 4]     ; first octet
+    movzx ebx, byte [rsp + 5]     ; second
+    movzx ecx, byte [rsp + 6]     ; third
+    movzx edx, byte [rsp + 7]     ; fourth
 
-    ; rdi = AF_INET (2)
-    ; rsi = pointer to sin_addr (client_addr + 4)
-    ; rdx = output buffer
-    ; rcx = buffer size (16)
-    mov     edi, 2
-    lea     rsi, [rsp + 4]
-    lea     rdx, [client_ip_str]
-    mov     ecx, 16
-    call    inet_ntop
+    ; convert the binary client address to a printable string
+    ; inet_ntop(af, src, dst, size)
+    mov edi, 2                ; AF_INET
+    lea rsi, [rsp + 4]        ; pointer to sin_addr (client_addr + 4)
+    lea rdx, [client_ip_str]  ; output buffer
+    mov ecx, 16               ; buffer size
+    
+    call inet_ntop
 
 .handle_request:
     READ_FILE r14, request, 1024
@@ -216,7 +232,7 @@ _start:
     cmp rax, -400
     je .bad_request
 
-    jmp .forbidden          ; in case i add a new code and forgot to implement it here
+    jmp .forbidden                 ; in case i add a new code and forgot to implement it here
 
 .get:
     ; prepend document_root so the path is relative to it
@@ -241,7 +257,8 @@ _start:
     mov rbx, rdi                             ; rbx = docroot length for offsetting
 
     lea rdi, [path + rbx]
-    PARSE_HTTP_PATH request, 1024, rdi, rcx  
+    PARSE_HTTP_PATH request, 1024, rdi, rcx  ; parse path into [path + docroot_len]
+
     cmp rcx, 0
     jle .forbidden
 
@@ -263,6 +280,8 @@ _start:
     jnz .add_index
 
 .check_exists:
+
+    ; check if the file exists before continuing
     lea rdi, [path]
 
     FILE_EXISTS rdi
@@ -295,7 +314,7 @@ _start:
 
     inc rdi                ; rdi now points past the slash (= where index_file goes)
     lea rsi, [index_file]
-    
+
     jmp .add_index
 
 .ok:
@@ -329,7 +348,6 @@ _start:
     lea r13, [response]
     lea r12, [response]
     mov qword [file_to_serve], errordoc_404_path
-
 
     mov rdi, 404
     call .write_header
@@ -419,9 +437,9 @@ _start:
     cmp byte [rdi], 0
     je .header_content_length
 
-    GET_MIME_TYPE rdi, rbx ; content type will be in rsi
+    GET_MIME_TYPE rdi, rbx     ; content type will be in rsi
 
-    mov rdi, rbx ; aappend doesn't clobbers rdi
+    mov rdi, rbx               ; aappend doesn't clobbers rdi
     AAPPEND r12, rdi
 
     AAPPEND r12, crlf
@@ -435,7 +453,7 @@ _start:
 
     FILE_SIZE rdi, rbx
 
-    cmp rbx, 0   ; rbx < 0 means that it failed, skipping header
+    cmp rbx, 0                          ; rbx < 0 means that it failed, skipping header
     jl .header_conn_close
 
     ITOA rbx, content_length_b, rcx
@@ -444,11 +462,10 @@ _start:
     AAPPEND r12, content_length_b
     AAPPEND r12, crlf
 
-
 .header_conn_close:
     AAPPEND r12, connection_close_header
     AAPPEND r12, crlf
-    AAPPEND r12, crlf   ; blank line = end of headers
+    AAPPEND r12, crlf                     ; blank line = end of headers
     ret
 
 .clear_buffers:
@@ -469,40 +486,43 @@ _start:
     ret
 
 .send:
-    PRINTF r14, r13, r12    ; send the headers first
+    PRINTF r14, r13, r12      ; send the headers first
 
     ; serve the file if one was set
-    mov r10, [file_to_serve]  
+    mov r10, [file_to_serve]
     test r10, r10
     jz .end
 
     FILE_EXISTS r10
     cmp rax, 1
-    jne .end                   ; file doesn't exist, just send headers
+    jne .end                    ; file doesn't exist, just send headers
 
     ; open the file
     mov rdi, r10
     OPEN_FILE rdi
 
     cmp rax, 0
-    jl .end                   ; shouldn't happen cuz FILE_EXISTS passed, but just in case
-    mov r11, rax              ; r11 = file fd
+    jl .end                     ; shouldn't happen cuz FILE_EXISTS passed, but just in case
+    mov r11, rax                ; r11 = file fd
 
-    ; sendfile(out_fd, in_fd, offset=NULL, count=big)
+    ; stream the file directly from the fd to the client socket
+    ; sendfile(out_fd, in_fd, offset, count)
     mov rax, 40
-    mov rdi, r14              ; client socket
-    mov rsi, r11              ; file fd
-    xor rdx, rdx              ; offset = NULL (start from beginning)
-    mov r10, 0x7fffffff       ; send as much as possible
+    mov rdi, r14                ; client socket
+    mov rsi, r11                ; file fd
+    xor rdx, rdx                ; offset = NULL (start from beginning)
+    mov r10, 0x7fffffff         ; send as much as possible
     syscall
 
-    ; close the file fd
+    ; close(fd)
     mov rax, 3
     mov rdi, r11
     syscall
 
 .end:
-    ; shutdown(fd, SHUT_WR=1)
+
+    ; signal we're done writing so the client knows the response is complete
+    ; shutdown(fd, how)
     mov rax, 48
     mov rdi, r14
     mov rsi, 1      ; SHUT_WR
@@ -510,6 +530,8 @@ _start:
 
     ; drain remaining input so TCP can close cleanly
 .__drain:
+
+    ; read(fd, buffer, count)
     mov rax, 0
     mov rdi, r14
     lea rsi, [request]
@@ -517,15 +539,15 @@ _start:
     syscall
 
     cmp rax, 0
-    jg .__drain     ; keep reading until eof / err
+    jg .__drain                    ; keep reading until eof / err
 
     ; close(fd)
     mov rax, 3
     mov rdi, r14
     syscall
 
-    movzx r12, word [last_status] ; Move byte to word with zero-extension
-    lea r13, [client_ip_str] ; using r12 and r13 to not get it clobbered, shouldnt be a problem since they will be replaced next iteration
+    movzx r12, word [last_status]  ; reuse r12/r13 for log, replaced next iteration
+    lea r13, [client_ip_str]
     LOG_REQUEST path, r12, r13
 
     add rsp, 16
@@ -534,6 +556,8 @@ _start:
 .close_client:
     add rsp, 16
 
+    ; close the client fd in the parent, the child owns it now
+    ; close(fd)
     mov rax, 3
     mov rdi, r14
     syscall
@@ -544,25 +568,25 @@ _start:
     jmp .wait
 
 .reap_loop:
-    ; reap zombie processes
 
-    ; wait4(pid, status, opt)
+    ; reap zombie processes
+    ; wait4(pid, status, options, usage)
     mov rax, 61
-    mov rdi, -1
+    mov rdi, -1     ; any child
     xor rsi, rsi
     mov rdx, 1      ; WNOHANG
     xor r10, r10
     syscall
 
     cmp rax, 0
-    jle .reap_done ; no child reaped, stop
+    jle .reap_done  ; no child reaped, stop
 
     dec byte [process_count]
     jmp .reap_loop
 
 .reap_done:
     ret
-    
+
 
 .fail_socket:
     LOG_ERR log_fail_socket, log_fail_socket_len
