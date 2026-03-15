@@ -154,3 +154,7 @@ dq mime_ext_html,     mime_type_html
 dq mime_ext_htm,      mime_type_html
 dq mime_ext_css,      mime_type_css
 ```
+
+## 6. Commits
+For the moment, no mandatory commit structure is required. Simply describe what you changed as clearly as you can, and prefer one commit per file.  
+Garbage commits (e.g. `sadasf`) **won't** be merged.
