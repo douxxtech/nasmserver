@@ -8,6 +8,7 @@
 !*/
 
 # Re-allow the file types inside any folder
+!**/*.example
 !**/*.md
 !**/*.asm
 !**/*.sh
