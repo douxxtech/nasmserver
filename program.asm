@@ -272,6 +272,8 @@ _start:
 
     mov byte [path + rax + 1], 0
 
+    STRCUT path, '?'                              ; remove the ?query=string, we won't process it as a static site
+
     cmp byte [path + rax], '/'
     jne .check_exists
 
