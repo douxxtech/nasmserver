@@ -58,7 +58,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            .env.example
+            env.example
             www.zip
             nasmserver
         env:

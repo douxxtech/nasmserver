@@ -12,7 +12,7 @@ I started learning NASM on a Monday afternoon, because I was bored in my NoSQL c
 
 ## Install (from a release)
 
-Each release ships a prebuilt `nasmserver` binary, a `www.zip` containing the default web directory structure and a `.env.example` containing the default configuration.
+Each release ships a prebuilt `nasmserver` binary, a `www.zip` containing the default web directory structure and a `env.example` containing the default configuration.
 
 ```bash
 # 1. Download and extract the release files
@@ -22,7 +22,7 @@ unzip www.zip
 chmod +x nasmserver
 
 # 3. Copy your .env (optional, see Configuration)
-cp .env.example .env
+cp env.example .env
 
 # 4. Run it (defaults to port 80, document root: ./www)
 ./nasmserver
@@ -52,7 +52,7 @@ The entry file is `program.asm`. Macros and utilities live in `macros/`, labels 
 
 ## Configuration
 
-Copy `.env.example` to `.env` and edit as needed. All keys are optional, and defaults are used if a key is missing or the file is not found.
+Copy `env.example` to `.env` and edit as needed. All keys are optional, and defaults are used if a key is missing or the file is not found.
 
 | Key | Default | Description |
 |---|---|---|
