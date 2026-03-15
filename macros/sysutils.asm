@@ -198,6 +198,39 @@ section .data
     pop rax
 %endmacro
 
+; STRCUT buf, char
+;   Truncates a null-terminated string at the first occurrence of char.
+;   If char is not found, the string is left untouched.
+;   Args:
+;     %1: pointer to the null-terminated buffer
+;     %2: byte value to cut at (e.g. '!', 0xa)
+;   Clobbers: rax, rbx
+%macro STRCUT 2
+    push rax
+    push rbx
+
+    lea rax, [%1]      ; rax = walking pointer
+
+%%loop:
+    mov bl, [rax]      ; load current byte
+
+    cmp bl, 0
+    je %%done          ; hit NUL, char not found 
+    
+    cmp bl, %2
+    je %%cut           ; found the target char
+
+    inc rax            ; advance pointer
+    jmp %%loop
+
+%%cut:
+    mov byte [rax], 0  ; overwrite char with NUL, truncating here
+
+%%done:
+    pop rbx
+    pop rax
+%endmacro
+
 ; BUILDPATH dest, base, suffix
 ;   Concatenates base and suffix into dest (null-terminated result).
 ;   If the base OR suffix string is empty, it'll leave the buffer untouched.
