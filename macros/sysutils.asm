@@ -143,6 +143,32 @@ section .data
     rep movsb
 %endmacro
 
+; ATOI buf_ptr, out_reg
+;   Converts a null-terminated decimal ASCII string to an unsigned 64-bit integer.
+;   Args:
+;     %1: pointer to the string buffer
+;     %2: register to store the resulting integer
+;   Clobbers: rax, rbx, rsi
+%macro ATOI 2
+    xor %2, %2
+    lea rsi, [%1]
+
+%%loop:
+    movzx rbx, byte [rsi]
+
+    cmp bl, 0
+    je %%done
+
+    imul %2, %2, 10
+    sub bl, '0'
+    add %2, rbx
+
+    inc rsi
+    jmp %%loop
+
+%%done:
+%endmacro
+
 ; STRLEN string_ptr, out_reg
 ;   Calculates the length of a null-terminated string.
 ;   Args:

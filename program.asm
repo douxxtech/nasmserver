@@ -1,36 +1,18 @@
+; program.asm - HTTP/1.0 server entry point
+
 %include "./macros/sysutils.asm"
 %include "./macros/fileutils.asm"
 %include "./macros/httputils.asm"
 %include "./macros/logutils.asm"
 %include "./macros/whatmimeisthat.asm"
+%include "./macros/envutils.asm"
 
+%include "./labels/initialsetup.asm"
 %include "./labels/startupchecks.asm"
 
 extern inet_ntop ; to process the client IP address
 
-; program.asm - HTTP/1.0 server entry point
 section .data
-
-    ; things you might want to configure
-
-    ; network conf
-    port        dw 80               ; port number (host byte order)
-    interface   dd 0                ; 0 = 0.0.0.0, or e.g. 0x0100007f = 127.0.0.1
-
-    ; server conf
-    document_root  db "/var/www/html", 0   ; document root, no trailing slash !
-    index_file     db "index.html", 0      ; default file if a directory is fetched (eg / becomes internally /index.txt)
-    max_conns      equ 20                  ; max simultaneous connections / threads (max is 255)
-    server_name    db "NASMServer/1.0", 0  ; the server name
-
-    ; errordocs files, relatively to the document_root (leave empty for none)
-    ; start them with a slash !
-    errordoc_405  db "/@errordocs/405.html", 0
-    errordoc_404  db "/@errordocs/404.html", 0
-    errordoc_403  db "/@errordocs/403.html", 0
-    errordoc_400  db "/@errordocs/400.html", 0
-
-    ; end of the things might want to configure
 
     ; socket setup
     sockaddr:
@@ -68,12 +50,6 @@ section .bss
     path                resb 256
     file_to_serve       resq 1     ; pointer to path to serve, or 0 for none
 
-    ; error doc paths (built at startup from document_root + errordoc_*)
-    errordoc_400_path   resb 256
-    errordoc_403_path   resb 256
-    errordoc_404_path   resb 256
-    errordoc_405_path   resb 256
-
     ; misc
     last_status         resw 1     ; for logs
     content_length_b    resb 20
@@ -93,20 +69,9 @@ section .text
 _start:
     PRINTN log_started_nasmserver, log_started_nasmserver_len
 
-    BUILDPATH errordoc_405_path, document_root, errordoc_405
-    BUILDPATH errordoc_404_path, document_root, errordoc_404
-    BUILDPATH errordoc_403_path, document_root, errordoc_403
-    BUILDPATH errordoc_400_path, document_root, errordoc_400
-    
-    ; build sockaddr from port/interface
-    movzx eax, word [port]
-    xchg al, ah                 ; htons(), swap bytes for big-endian
-    mov word [sockaddr + 2], ax
+    call initial_setup  ; from labels/initialsetup.asm
 
-    mov eax, [interface]
-    mov dword [sockaddr + 4], eax
-
-    call startup_checks
+    call startup_checks ; from labels/startupchecks.asm
 
 .start_server:
     ; socket(domain, type, protocol)
@@ -146,7 +111,7 @@ _start:
     ; listen(fd, backlog)
     mov rax, 50
     mov rdi, r15
-    mov rsi, max_conns
+    movzx rsi, byte [max_conns]
     syscall
 
     ; this mess prints the port log
@@ -157,8 +122,8 @@ _start:
 
     ; port int to ascii
     movzx rbx, word [port]
+    
     ITOA rbx, log_port_buf, r9
-
     PRINTN log_port_buf, r9
 
 
@@ -179,14 +144,14 @@ _start:
 
 .wait_for_slot:
     movzx rax, byte [process_count]
-    cmp rax, max_conns
+    cmp al, [max_conns]
     jl .do_fork
 
     ; try reaping first in case some just finished
     call .reap_loop
 
     movzx rax, byte [process_count]
-    cmp rax, max_conns
+    cmp al, [max_conns]
     jl .do_fork
 
     ; still full so just close the conn
