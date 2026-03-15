@@ -3,6 +3,8 @@
 
 # But not these (root level)
 !.gitignore
+!/www/**
+!/.github/**
 
 # Allow directories themselves to be traversed
 !*/
@@ -13,4 +15,3 @@
 !**/*.asm
 !**/*.sh
 !**/LICENSE
-!/www/**
