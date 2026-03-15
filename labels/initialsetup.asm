@@ -15,7 +15,7 @@ section .data
     default_maxconns      db "20", 0
 
     key_name              db "SERVER_NAME", 0     ; server name provided in the response headers
-    default_name          db "NASMServer/1.0", 0
+    default_name          db "NASMServer/1.1", 0
 
     ; errordocs files, relatively to the document_root (empty = none)
     ; start them with a slash !
