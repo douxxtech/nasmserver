@@ -476,23 +476,6 @@ _start:
     AAPPEND r12, crlf                     ; blank line = end of headers
     ret
 
-.clear_buffers:
-    xor eax, eax
-
-    mov rdi, request
-    mov rcx, 1024
-    rep stosb
-
-    mov rdi, response
-    mov rcx, 1024
-    rep stosb
-
-    mov rdi, path
-    mov rcx, 256
-    rep stosb
-
-    ret
-
 .send:
     PRINTF r14, r13, r12      ; send the headers first
 
