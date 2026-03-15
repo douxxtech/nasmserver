@@ -1,7 +1,7 @@
 ; envutils.asm - .env file parsing utilities for NASMServer
 
 section .bss
-    env_buf  resb 4096 ; Idk yet the number of bytes a file with comments could have
+    env_buf  resb 4096  ; Idk yet the number of bytes a file with comments could have
 
 ; GET_ENV_VALUE path, key, out_buf, out_buf_size
 ;   Reads a .env file and extracts the value for a given key.
@@ -14,7 +14,6 @@ section .bss
 ;     rax = length of value written, or -1 on failure (file not found, key not found)
 ;   Clobbers: rax, rbx, rcx, rdx, rdi, rsi, r8, r9
 %macro GET_ENV_VALUE 4
-    ; open and read the file
 
     OPEN_FILE %1
     cmp rax, 0
@@ -26,7 +25,8 @@ section .bss
     cmp rax, 0
     jl %%close_fail
 
-    ; close the fd since we have the data
+    ; close the fd since we have the data in env_buf
+    ; close(fd)
     push rax
     mov rax, 3
     mov rdi, rbx
@@ -41,7 +41,7 @@ section .bss
 
 %%line_start:
     cmp r8, r9
-    jge %%fail               ; past end of buffer
+    jge %%fail                ; past end of buffer
 
     ; skip comment lines
     cmp byte [r8], '#'
@@ -55,14 +55,14 @@ section .bss
     lea rsi, [r8]
     lea rdi, [%2]
 
-    push rcx                 ; repe cmpsb clobbers rcx
-    repe cmpsb 
+    push rcx                  ; repe cmpsb clobbers rcx
+    repe cmpsb
     pop rcx
 
-    jne %%skip_line          ; mismatch
+    jne %%skip_line           ; mismatch
 
     ; matched key bytes, next char must be '='
-    cmp byte [r8 + rcx], '='  
+    cmp byte [r8 + rcx], '='
     jne %%skip_line
 
     ; found it
@@ -76,7 +76,7 @@ section .bss
 
     cmp byte [r8], 0x0a
     je %%next_char
-    
+
     inc r8
     jmp %%skip_line
 
@@ -117,6 +117,9 @@ section .bss
     jmp %%done
 
 %%close_fail:
+
+    ; close fd on read failure before returning
+    ; close(fd)
     mov rdi, rbx
     mov rax, 3
     syscall
@@ -139,7 +142,7 @@ section .bss
     GET_ENV_VALUE %1, %2, %3, %4
 
     cmp rax, -1
-    jne %%done              ; found it, rax already set
+    jne %%done     ; found it, rax already set
 
     ; copy default into out_buf
     lea rsi, [%5]
@@ -153,7 +156,7 @@ section .bss
     je %%default_done
 
     dec rcx
-    jz %%default_done    ; out buf full
+    jz %%default_done   ; out buf full
 
     mov [rdi], al
     inc rsi
