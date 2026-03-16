@@ -7,6 +7,7 @@
 %include "./macros/whatmimeisthat.asm"
 %include "./macros/envutils.asm"
 
+%include "./labels/flagparser.asm"
 %include "./labels/initialsetup.asm"
 %include "./labels/startupchecks.asm"
 
@@ -71,7 +72,7 @@ _start:
     PRINTN log_started_nasmserver, log_started_nasmserver_len
 
     mov r15, [rsp]       ; argc
-    mov r14, [rsp + 16]  ; eventual argv[1]
+    call parse_flags     ; sets flag_* bytes, strips flags, etc. From labels/flagparser.asm
 
     call initial_setup   ; from labels/initialsetup.asm
 

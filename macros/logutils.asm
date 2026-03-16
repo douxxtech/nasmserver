@@ -22,7 +22,10 @@ section .data
     log_prefix_warning_len          equ $ - log_prefix_warning - 1
 
     ; NASMServer - Static files server
-    log_started_nasmserver          db "Started the NASMServer static files HTTP server.", 0xa, "https://github.com/douxxtech/nasmserver", 0xa, 0xa
+    log_started_nasmserver          db "Started the NASMServer static files HTTP server.", 0xa, \
+                                        "https://github.com/douxxtech/nasmserver", \
+                                        0xa, 0xa
+                                        
     log_started_nasmserver_len      equ $ - log_started_nasmserver
 
     ; startup check messages
@@ -88,6 +91,11 @@ section .data
     ; other messages
     log_too_many_concurrent        db "Rejected request: too many concurrent requests", 0
     log_too_many_concurrent_len    equ $ - log_too_many_concurrent - 1
+
+    log_help_text      db "Usage: nasmserver [-h] [-e <config.env>]", 0xa, \
+                          "  -h              show this help", 0xa, \
+                          "  -e <config>     path to the .env config file", 0xa, 0
+    log_help_text_len  equ $ - log_help_text
 
 ; macros
 

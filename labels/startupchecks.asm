@@ -10,6 +10,14 @@ startup_checks:
     push rbp
     mov rbp, rsp
 
+    cmp byte [flag_help], 1
+    jne .check_docroot
+
+    ; -h has been passed, so show the help command
+    PRINTN log_help_text, log_help_text_len
+    EXIT 0
+    
+.check_docroot:
     ; document_root: must exist and be a directory
     lea rdi, [document_root]
     FILE_EXISTS rdi

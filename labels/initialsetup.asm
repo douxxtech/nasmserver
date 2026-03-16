@@ -60,8 +60,10 @@ section .text
 ;              errordoc_* paths, and sockaddr.
 ;   Exits with code 1 if argv[1] was given but the file doesn't exist.
 initial_setup:
-    cmp r15, 2
-    jl .use_default
+    mov r14, [flag_env_path]
+    
+    test r14, r14
+    jz .use_default           ; -e not passed
 
     FILE_EXISTS r14
     cmp rax, 1
