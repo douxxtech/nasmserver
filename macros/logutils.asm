@@ -4,28 +4,36 @@ extern localtime_r
 extern strftime
 
 section .data
+    ts_fmt      db "%H:%M:%S ", 0  ; trailing space included
+    ts_buf      times 16 db 0      ; "HH:MM:SS \0" + padding
+    timespec    dq 0, 0            ; tv_sec, tv_nsec (struct timespec)
+    tm_buf      times 64 db 0      ; struct tm (libc)
 
-    ; timestamp
-    ts_fmt   db "%H:%M:%S ", 0  ; trailing space included
-    ts_buf   times 16 db 0      ; "HH:MM:SS \0" + padding
-    timespec dq 0, 0            ; tv_sec, tv_nsec (struct timespec)
-    tm_buf   times 64 db 0      ; struct tm (libc)
 
-    ; level prefixes
-    log_prefix_info                 db "[INFO] ", 0
-    log_prefix_info_len             equ $ - log_prefix_info - 1
+    ; log level prefixes
 
-    log_prefix_err                  db "[ERROR] ", 0
-    log_prefix_err_len              equ $ - log_prefix_err - 1
+    log_prefix_info             db "[INFO] ", 0
+    log_prefix_info_len         equ $ - log_prefix_info - 1
 
-    log_prefix_warning              db "[WARNING] ", 0
-    log_prefix_warning_len          equ $ - log_prefix_warning - 1
+    log_prefix_warning          db "[WARNING] ", 0
+    log_prefix_warning_len      equ $ - log_prefix_warning - 1
 
-    ; NASMServer - Static files server
-    log_started_nasmserver          db "Started the NASMServer static files HTTP server.", 0xa, "https://github.com/douxxtech/nasmserver", 0xa, 0xa
-    log_started_nasmserver_len      equ $ - log_started_nasmserver
+    log_prefix_err              db "[ERROR] ", 0
+    log_prefix_err_len          equ $ - log_prefix_err - 1
 
-    ; startup check messages
+
+    ; startup banner
+    log_started_nasmserver db "Started the NASMServer static files HTTP server.", 0xa, \
+                            "https://github.com/douxxtech/nasmserver", \
+                            0xa, 0xa
+
+    log_started_nasmserver_len  equ $ - log_started_nasmserver
+
+
+    ; startup checks
+    log_startup_ok                  db "Startup checks passed", 0
+    log_startup_ok_len              equ $ - log_startup_ok - 1
+
     log_check_docroot_missing       db "document_root does not exist or is not a directory", 0
     log_check_docroot_missing_len   equ $ - log_check_docroot_missing - 1
 
@@ -35,59 +43,80 @@ section .data
     log_check_errordoc_missing      db "errordoc file not found (requests will get empty error pages)", 0
     log_check_errordoc_missing_len  equ $ - log_check_errordoc_missing - 1
 
-    log_check_port_privileged      db "Warning: port < 1024 requires root privileges", 0
-    log_check_port_privileged_len  equ $ - log_check_port_privileged - 1
+    log_check_port_privileged       db "Warning: port < 1024 requires root privileges", 0
+    log_check_port_privileged_len   equ $ - log_check_port_privileged - 1
 
-    log_startup_ok                 db "Startup checks passed", 0
-    log_startup_ok_len             equ $ - log_startup_ok - 1
 
-    ; startup / fatal messages
-    log_fail_read_env              db "Failed to read the provided configuration file path", 0
-    log_fail_read_env_len          equ $ - log_fail_read_env - 1
+    ; startup / fatal errors
+    log_fail_read_env               db "Failed to read the provided configuration file path", 0
+    log_fail_read_env_len           equ $ - log_fail_read_env - 1
 
-    log_listening_port             db "Listening on port ", 0
-    log_listening_port_len         equ $ - log_listening_port - 1
+    log_fail_socket                 db "Failed to open socket", 0
+    log_fail_socket_len             equ $ - log_fail_socket - 1
 
-    log_fail_socket                db "Failed to open socket", 0
-    log_fail_socket_len            equ $ - log_fail_socket - 1
+    log_fail_setsockopt             db "Failed to set socket options", 0
+    log_fail_setsockopt_len         equ $ - log_fail_setsockopt - 1
 
-    log_fail_setsockopt            db "Failed to set socket options", 0
-    log_fail_setsockopt_len        equ $ - log_fail_setsockopt - 1
+    log_fail_bind                   db "Failed to bind to port", 0
+    log_fail_bind_len               equ $ - log_fail_bind - 1
 
-    log_fail_bind                  db "Failed to bind to port", 0
-    log_fail_bind_len              equ $ - log_fail_bind - 1
+    log_fail_accept                 db "Failed to accept connection", 0
+    log_fail_accept_len             equ $ - log_fail_accept - 1
 
-    log_fail_accept                db "Failed to accept connection", 0
-    log_fail_accept_len            equ $ - log_fail_accept - 1
+    log_listening_port              db "Listening on port ", 0
+    log_listening_port_len          equ $ - log_listening_port - 1
+
 
     ; request logging
-    log_thing                      db " - ", 0
-    log_thing_len                  equ $ - log_thing - 1
+    log_request_pre                 db "Request: ", 0
+    log_request_pre_len             equ $ - log_request_pre - 1
 
-    log_request_pre                db "Request: ", 0
-    log_request_pre_len            equ $ - log_request_pre - 1
+    log_arrow                       db " -> ", 0
+    log_arrow_len                   equ $ - log_arrow - 1
 
-    log_arrow                      db " -> ", 0
-    log_arrow_len                  equ $ - log_arrow - 1
+    log_thing                       db " - ", 0
+    log_thing_len                   equ $ - log_thing - 1
 
-    log_status_405                 db "405 Method Not Allowed", 0xa, 0
-    log_status_405_len             equ $ - log_status_405 - 1
 
-    log_status_404                 db "404 Not Found", 0xa, 0
-    log_status_404_len             equ $ - log_status_404 - 1
+    ; HTTP status messages
+    log_status_200                  db "200 OK", 0xa, 0
+    log_status_200_len              equ $ - log_status_200 - 1
 
-    log_status_403                 db "403 Forbidden", 0xa, 0
-    log_status_403_len             equ $ - log_status_403 - 1
+    log_status_400                  db "400 Bad Request", 0xa, 0
+    log_status_400_len              equ $ - log_status_400 - 1
 
-    log_status_400                 db "400 Bad Request", 0xa, 0
-    log_status_400_len             equ $ - log_status_400 - 1
+    log_status_403                  db "403 Forbidden", 0xa, 0
+    log_status_403_len              equ $ - log_status_403 - 1
 
-    log_status_200                 db "200 OK", 0xa, 0
-    log_status_200_len             equ $ - log_status_200 - 1
+    log_status_404                  db "404 Not Found", 0xa, 0
+    log_status_404_len              equ $ - log_status_404 - 1
 
-    ; other messages
-    log_too_many_concurrent        db "Rejected request: too many concurrent requests", 0
-    log_too_many_concurrent_len    equ $ - log_too_many_concurrent - 1
+    log_status_405                  db "405 Method Not Allowed", 0xa, 0
+    log_status_405_len              equ $ - log_status_405 - 1
+
+
+    ; runtime warnings
+    log_too_many_concurrent         db "Rejected request: too many concurrent requests", 0
+    log_too_many_concurrent_len     equ $ - log_too_many_concurrent - 1
+
+
+    ; CLI / arguments / help
+    log_arg_not_recognized_p1       db "Argument '", 0
+    log_arg_not_recognized_p1_len   equ $ - log_arg_not_recognized_p1 - 1
+
+    log_arg_not_recognized_p2       db "' is not recognized by NASMServer.", 0xa, \
+                                       "Run nasmserver -h to see the list of available flags and arguments.", 0
+    log_arg_not_recognized_p2_len   equ $ - log_arg_not_recognized_p2 - 1
+
+    log_flag_e_error                db "Missing value after '-e'. Usage: -e <config.env>", 0
+    log_flag_e_error_len            equ $ - log_flag_e_error - 1
+
+    log_help_text                   db "Usage: nasmserver [-h] [-e <config.env>]", 0xa, \
+                                       "  -h              show this help", 0xa, \
+                                       "  -e <config>     path to the .env config file", 0xa, 0
+
+    log_help_text_len               equ $ - log_help_text - 1
+
 
 ; macros
 

@@ -10,6 +10,7 @@ startup_checks:
     push rbp
     mov rbp, rsp
 
+.check_docroot:
     ; document_root: must exist and be a directory
     lea rdi, [document_root]
     FILE_EXISTS rdi

@@ -55,13 +55,18 @@ section .text
     global initial_setup
 
 ; initial_setup
-;   Loads configuration from a .env file (or argv[1]) into BSS buffers.
+;   Loads configuration from a .env file (or -e) into BSS buffers.
 ;   Populates: port, max_conns, document_root, index_file, server_name,
 ;              errordoc_* paths, and sockaddr.
-;   Exits with code 1 if argv[1] was given but the file doesn't exist.
+;   Exits with code 1 if -e was given but the file doesn't exist.
+;   Exits with code 0 if the help was displayed (-h).
 initial_setup:
-    cmp r15, 2
-    jl .use_default
+    cmp byte [flag_help], 1   ; -h passed
+    je .display_help
+
+    mov r14, [flag_env_path]
+    test r14, r14
+    jz .use_default           ; -e not passed
 
     FILE_EXISTS r14
     cmp rax, 1
@@ -136,3 +141,7 @@ initial_setup:
 .failed_read_file:
     LOG_ERR log_fail_read_env, log_fail_read_env_len
     EXIT 1
+
+.display_help:
+    PRINTN log_help_text, log_help_text_len
+    EXIT 0

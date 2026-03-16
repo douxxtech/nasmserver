@@ -27,8 +27,8 @@ cp env.example .env
 # 4. Run it (defaults to port 80, document root: ./www)
 ./nasmserver
 
-# Or pass a custom config file as argv[1]
-./nasmserver /path/to/config.env
+# Or pass a custom config file as -e
+./nasmserver -e /path/to/config.env
 ```
 
 > Ports below 1024 (including the default port 80) require root or `CAP_NET_BIND_SERVICE`. Either run with `sudo`, or set `PORT` to something above 1024 in your `.env`.
