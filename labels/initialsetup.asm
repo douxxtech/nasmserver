@@ -111,7 +111,7 @@ initial_setup:
 
     ENV_DEFAULT env_path_buf, key_docroot, document_root, 256, default_docroot
     ENV_DEFAULT env_path_buf, key_index,   index_file,    64,  default_index
-    ENV_DEFAULT env_path_buf, key_name,    server_name,   64,  default_name
+    ENV_DEFAULT env_path_buf, key_name,    server_name,   64,  server_w_ver
 
     ENV_DEFAULT env_path_buf, key_errordoc_405, errordoc_405, 128, default_errordoc_405
     ENV_DEFAULT env_path_buf, key_errordoc_404, errordoc_404, 128, default_errordoc_404
