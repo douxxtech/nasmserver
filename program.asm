@@ -18,7 +18,7 @@ section .data
     ; socket setup
     sockaddr:
         dw 2       ; AF_INET (ipv4)
-        dw 0x5000  ; port 80 big-endian (edited at runtime)
+        dw 0x1F90  ; port 8080 big-endian (edited at runtime)
         dd 0       ; 0.0.0.0 = listen on all interfaces
         dq 0       ; padding
 

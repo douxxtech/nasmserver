@@ -3,7 +3,7 @@ section .data
 
     ; keys & defaults if no .env is provided or found
     key_port              db "PORT", 0
-    default_port          db "80", 0
+    default_port          db "8080", 0
 
     key_docroot           db "DOCUMENT_ROOT", 0   ; document root, no trailing slash !
     default_docroot       db ".", 0

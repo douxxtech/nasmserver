@@ -24,14 +24,14 @@ chmod +x nasmserver
 # 3. Copy your .env (optional, see Configuration)
 cp env.example .env
 
-# 4. Run it (defaults to port 80, document root: ./www)
+# 4. Run it (defaults to port 8080, document root: ./www)
 ./nasmserver
 
 # Or pass a custom config file as -e
 ./nasmserver -e /path/to/config.env
 ```
 
-> Ports below 1024 (including the default port 80) require root or `CAP_NET_BIND_SERVICE`. Either run with `sudo`, or set `PORT` to something above 1024 in your `.env`.
+> Ports below 1024 (including the default port 8080) require root or `CAP_NET_BIND_SERVICE`. Either run with `sudo`, or set `PORT` to something above 1024 in your `.env`.
 
 
 ## Build from source
@@ -56,7 +56,7 @@ Copy `env.example` to `.env` and edit as needed. All keys are optional, and defa
 
 | Key | Default | Description |
 |---|---|---|
-| `PORT` | `80` | Port to listen on |
+| `PORT` | `8080` | Port to listen on |
 | `DOCUMENT_ROOT` | `.` | Document root directory, no trailing slash |
 | `INDEX_FILE` | `index.html` | File served when a directory is requested |
 | `MAX_REQUESTS` | `20` | Max simultaneous connections (1–255) |
