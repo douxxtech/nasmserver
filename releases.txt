@@ -14,6 +14,20 @@
 # - Release description: detailed information about the release
 # - =--- END ---=: marks the end of the release 
 
+=--- v1.2-rev.1 ---=
+### What changed
+**rev.1**
+- x64 and aarch64 bundles are automatically prebuilt and uploaded to release assets
+
+
+**v1.2**
+- Default port changed from `80` to `8080`
+- Added `-e <path>` flag to specify a config file (replaces passing it as a plain argument)
+- Added `-h` flag to print usage information
+- Added `-v` flag to print the server version
+- Passing an unrecognized argument now prints a helpful error instead of silently ignoring it
+=--- END ---=
+
 =--- v1.2 ---=
 ### What changed
 - Default port changed from `80` to `8080`
