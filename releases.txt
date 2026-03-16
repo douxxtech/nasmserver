@@ -12,7 +12,7 @@
 # Details:
 # - release-name: the name of the release
 # - Release description: detailed information about the release
-# - =--- END ---=: marks the end of the release 
+# - =--- END ---=: marks the end of the release
 
 =--- v1.2-rev.1 ---=
 ### What changed
