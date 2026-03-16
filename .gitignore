@@ -3,6 +3,7 @@
 
 # But not these (root level)
 !.gitignore
+!.gitattributes
 !/www/**
 !/.github/**
 !/releases.txt
