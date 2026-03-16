@@ -231,6 +231,46 @@ section .data
     pop rax
 %endmacro
 
+; STREQ a, b, out_reg
+;   Compares two null-terminated strings.
+;   Args:
+;     %1: pointer to string a
+;     %2: pointer to string b
+;     %3: register to store result (1 if equal, 0 otherwise)
+;   Clobbers: rax, rbx, rsi, rdi
+%macro STREQ 3
+    push rsi
+    push rdi
+
+    lea rsi, [%1]
+    lea rdi, [%2]
+
+%%loop:
+    mov al, [rsi]
+    mov bl, [rdi]
+
+    cmp al, bl
+    jne %%not_equal
+
+    test al, al
+    jz %%equal
+
+    inc rsi
+    inc rdi
+    jmp %%loop
+
+%%equal:
+    mov %3, 1
+    jmp %%done
+
+%%not_equal:
+    xor %3, %3
+
+%%done:
+    pop rdi
+    pop rsi
+%endmacro
+
 ; BUILDPATH dest, base, suffix
 ;   Concatenates base and suffix into dest (null-terminated result).
 ;   If the base OR suffix string is empty, it'll leave the buffer untouched.
