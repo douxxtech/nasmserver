@@ -68,8 +68,9 @@ parse_flags:
     ; next arg is the env path
     mov rax, rcx
     inc rax
+
     cmp rax, r15
-    jge .done                         ; -e with no value, ignore
+    jge .error_e                      ; -e with no value, ignore
 
     mov rax, [rbp + 8 + 8 + rax * 8]  ; argv[rcx+1]
     mov [flag_env_path], rax
@@ -83,6 +84,10 @@ parse_flags:
     dec r15
 
     jmp .next_arg
+
+.error_e:
+    PRINTN log_flag_e_error, log_flag_e_error_len
+    EXIT 1
 
 ; .remove_arg
 ;   Removes argv[rcx] by shifting argv[rcx+1..argc-1] left by one slot.
