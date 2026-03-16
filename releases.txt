@@ -14,6 +14,15 @@
 # - Release description: detailed information about the release
 # - =--- END ---=: marks the end of the release 
 
+=--- v1.2 ---=
+### What changed
+- Default port changed from `80` to `8080`
+- Added `-e <path>` flag to specify a config file (replaces passing it as a plain argument)
+- Added `-h` flag to print usage information
+- Added `-v` flag to print the server version
+- Passing an unrecognized argument now prints a helpful error instead of silently ignoring it
+=--- END ---=
+
 =--- v1.1 ---=
 ### What changed
 - `?queries` are being dropped from request paths (e.g. `/page?hey=yo` is threated as `/page`). Since this is a static file server, they are never processed and would previously cause file requests to 404.
