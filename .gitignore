@@ -17,3 +17,7 @@
 !**/*.asm
 !**/*.sh
 !**/LICENSE
+
+# Ignore potential prebuilt bundles
+bundle-*
+bundle-*/
