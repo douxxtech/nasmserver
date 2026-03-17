@@ -47,6 +47,9 @@ elif [ "$ARCH" = "aarch64" ]; then
     # patch the binary to use the provided libs
     patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 --set-rpath /lib/x86_64-linux-gnu "$BUNDLE_DIR/nasmserver-bin"
 
+    # remove qemu from the working dir
+    rm qemu-x86_64-static
+
 else
     echo "Error: unknown arch '$ARCH'"
     exit 1
