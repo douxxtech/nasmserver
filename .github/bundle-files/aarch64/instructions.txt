@@ -9,6 +9,7 @@ CONTENTS
 --------
   nasmserver              - launcher script (run this)
   nasmserver-bin          - the actual x86_64 server binary (pre-patched)
+  installer             - optional setup/installation script
   qemu-x86_64-static      - QEMU x86_64 emulator (aarch64 build)
   libs/                   - bundled x86_64 runtime libraries
   www/                    - default web directory
@@ -21,8 +22,8 @@ directory as itself. The binary is also patched to look for its runtime
 libraries in libs/, so keep that folder intact.
 
 
-INSTALLATION
-------------
+USAGE
+-----
 1. Extract the bundle to a directory of your choice
 
 2. Copy the example config:
@@ -30,6 +31,15 @@ INSTALLATION
 
 3. Run it:
      ./nasmserver
+
+
+INSTALLATION / UPDATE
+---------------------
+1. Run the install script:
+     sudo ./install
+
+2. Use the installed program:
+     nasmserver
 
 
 CONFIGURATION
@@ -54,6 +64,7 @@ Edit .env to configure the server. All keys are optional.
   ERRORDOC_405
 
 Note: .env must use LF line endings, not CRLF.
+Note 2: On installs, the configuration file is /opt/nasmserver/config.cfg
 
 To use a custom config file path instead of .env:
   ./nasmserver -e /path/to/config.env
