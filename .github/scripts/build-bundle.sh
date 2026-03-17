@@ -36,7 +36,6 @@ elif [ "$ARCH" = "aarch64" ]; then
     curl -L "https://github.com/multiarch/qemu-user-static/releases/latest/download/qemu-x86_64-static.tar.gz" | tar xz
 
     # move the binaries to the bundle
-    cp nasmserver "$BUNDLE_DIR/nasmserver-bin"
     cp qemu-x86_64-static "$BUNDLE_DIR/"
 
     # move the libs
