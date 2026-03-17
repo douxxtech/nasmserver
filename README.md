@@ -10,7 +10,7 @@ Read the [blog article](https://aka.dbo.one/nasmserver)!
 
 I started learning NASM on a Monday afternoon, because I was bored in my NoSQL class. After a few self-made exercises (parsing args, string processing, etc.), I built a small HTTP client tool, imagine curl, but without the cool stuff. Then during my blockchain class, I started developing this server. The source grew from there.
 
-## Install (from a release)
+## Usage (from a release)
 
 Each release ships prebuilt bundles for different architectures. The bundles contain everything you need to run NASMServer. This includes the entry script `nasmserver`, an example configuration file `env.example`, and a default web directory `www/`.
 
@@ -41,18 +41,27 @@ cp env.example .env
 > Ports below 1024 (including the default port 8080) require root or `CAP_NET_BIND_SERVICE`. Either run with `sudo`, or set `PORT` to something above 1024 in your `.env`.
 
 
-## Build from source
-
-**Requirements:** `nasm` `binutils`
+## Install (from a release)
+Each bundle comes with an install script, that installs NASMServer on your operating system. It can also be used to update the current installation:
 
 ```bash
+# once in the extracted bundle (see previous section)
+./install
+```
+
+## Build from source
+
+**Requirements:** `nasm` `binutils` `patchelf`
+
+```bash
+# to only build the x86_64 NASMServer binary
 bash buildasm.sh program.asm
-```
+# output binary will be 'program'
 
-Expected output:
 
-```
-Built executable: program
+# to build a specific bundle
+bash .github/scripts/build-bindle.sh <x64|aarch64>
+# this script outputs bundle-<arch>/ and nasmserver-linux-<arch>.zip
 ```
 
 The entry file is `program.asm`. Macros and utilities live in `macros/`, labels in `labels/`.
