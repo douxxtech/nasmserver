@@ -32,7 +32,7 @@ mkdir -p "$WWW_DIR"
 cp -rn ./www/* "$WWW_DIR/"
 
 # make a symbolic link to /usr/local/bin
-ln -s /opt/nasmserver/nasmserver /usr/local/bin/nasmserver
+ln -sf /opt/nasmserver/nasmserver /usr/local/bin/nasmserver
 
 echo "Done. Installed to $INSTALL_DIR, web root at $WWW_DIR, config file at $INSTALL_DIR/config.cfg"
 echo "Run with: nasmserver"
