@@ -29,11 +29,13 @@ section .data
     key_errordoc_405      db "ERRORDOC_405", 0
     key_errordoc_404      db "ERRORDOC_404", 0
     key_errordoc_403      db "ERRORDOC_403", 0
+    key_errordoc_401      db "ERRORDOC_401", 0
     key_errordoc_400      db "ERRORDOC_400", 0
 
     default_errordoc_405  db "", 0
     default_errordoc_404  db "", 0
     default_errordoc_403  db "", 0
+    default_errordoc_401  db "", 0
     default_errordoc_400  db "", 0
 
 section .bss
@@ -55,12 +57,14 @@ section .bss
     errordoc_404       resb 129
     errordoc_403       resb 129
     errordoc_400       resb 129
+    errordoc_401       resb 129
 
-    ; error doc paths (built at startup from document_root + errordoc_*)
-    errordoc_400_path  resb 256
-    errordoc_403_path  resb 256
-    errordoc_404_path  resb 256
-    errordoc_405_path  resb 256
+    ; error doc paths (built at startup from document_root + errordoc_* + NUL)
+    errordoc_405_path  resb 257
+    errordoc_404_path  resb 257
+    errordoc_403_path  resb 257
+    errordoc_401_path  resb 257
+    errordoc_400_path  resb 257
 
 section .text
     global initial_setup
@@ -128,6 +132,7 @@ initial_setup:
     ENV_DEFAULT env_path_buf, key_errordoc_405, errordoc_405,   129,  default_errordoc_405
     ENV_DEFAULT env_path_buf, key_errordoc_404, errordoc_404,   129,  default_errordoc_404
     ENV_DEFAULT env_path_buf, key_errordoc_403, errordoc_403,   129,  default_errordoc_403
+    ENV_DEFAULT env_path_buf, key_errordoc_401, errordoc_401,   129,  default_errordoc_401
     ENV_DEFAULT env_path_buf, key_errordoc_400, errordoc_400,   129,  default_errordoc_400
 
     ; port: read as ascii, then convert to integer
@@ -152,6 +157,7 @@ initial_setup:
     BUILDPATH errordoc_405_path, document_root, errordoc_405
     BUILDPATH errordoc_404_path, document_root, errordoc_404
     BUILDPATH errordoc_403_path, document_root, errordoc_403
+    BUILDPATH errordoc_401_path, document_root, errordoc_401
     BUILDPATH errordoc_400_path, document_root, errordoc_400
 
     ret

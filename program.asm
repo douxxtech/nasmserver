@@ -429,7 +429,7 @@ _start:
 .unauthorized:
     lea r13, [response]
     lea r12, [response]
-    mov qword [file_to_serve], 0  ; no body for 401
+    mov qword [file_to_serve], errordoc_401_path
 
     mov rdi, 401
     call .write_header
@@ -513,9 +513,6 @@ _start:
     ; content type detection
     mov rdi, [file_to_serve]
 
-    test rdi, rdi              ; if file to serve is '0'
-    jz .header_content_length
-
     cmp byte [rdi], 0
     je .header_content_length
 
@@ -529,9 +526,6 @@ _start:
 .header_content_length:
     ; very similar to the previous one
     mov rdi, [file_to_serve]
-
-    test rdi, rdi
-    jz .header_conn_close
 
     cmp byte [rdi], 0
     je .header_conn_close
