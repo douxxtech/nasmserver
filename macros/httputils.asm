@@ -222,13 +222,19 @@
     ; the token in the buffer and restore the original byte after
     mov rax, r8
     add rax, r9
-    
-    mov cl, [rsi + rax]          ; save the byte we're about to clobber
-    mov byte [rsi + rax], 0      ; temporary null terminator
 
-    B64_DECODE rsi + r8, %3, %4
+    mov cl, [rsi + rax]
+    mov byte [rsi + rax], 0
 
-    mov [rsi + rax], cl          ; restore
+    lea rdi, [rsi + r8]      ; token start -> rdi (B64_DECODE's src)
+    push rsi                 ; save base pointer (B64_DECODE clobbers rsi)
+    push rax                 ; save restore index too (B64_DECODE clobbers rax)
+
+    B64_DECODE rdi, %3, %4
+
+    pop rax
+    pop rsi
+    mov [rsi + rax], cl      ; restore clobbered byte
 
     jmp %%done
 
