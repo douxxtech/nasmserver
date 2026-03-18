@@ -4,6 +4,7 @@
 %include "./macros/fileutils.asm"
 %include "./macros/httputils.asm"
 %include "./macros/logutils.asm"
+%include "./macros/strutils.asm"
 %include "./macros/sysutils.asm"
 %include "./macros/whatmimeisthat.asm"
 
