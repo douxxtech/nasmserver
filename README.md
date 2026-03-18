@@ -77,6 +77,8 @@ Copy `env.example` to `.env` and edit as needed. All keys are optional, and defa
 | `INDEX_FILE` | `index.html` | File served when a directory is requested |
 | `MAX_REQUESTS` | `20` | Max simultaneous connections (1–255) |
 | `SERVER_NAME` | `NASMServer/ver` | Value for the `Server:` response header |
+| `AUTH_USER` | *(empty)* | Username for Basic Authentication. If set, authentication is enabled |
+| `AUTH_PASSWORD` | *(empty)* | Password for Basic Authentication. Only used if `AUTH_USER` is set |
 | `ERRORDOC_400` | *(empty)* | Error page path, relative to `DOCUMENT_ROOT`, must start with `/` |
 | `ERRORDOC_403` | *(empty)* | Same, for 403 |
 | `ERRORDOC_404` | *(empty)* | Same, for 404 |

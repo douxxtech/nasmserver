@@ -82,6 +82,9 @@ section .data
     log_status_400                  db "400 Bad Request", 0xa, 0
     log_status_400_len              equ $ - log_status_400 - 1
 
+    log_status_401                  db "401 Unauthorized", 0xa, 0
+    log_status_401_len              equ $ - log_status_401 - 1
+
     log_status_403                  db "403 Forbidden", 0xa, 0
     log_status_403_len              equ $ - log_status_403 - 1
 
@@ -221,6 +224,9 @@ section .data
     cmp %2, 403
     je %%s403
 
+    cmp %2, 401
+    je %%s401
+
     cmp %2, 400
     je %%s400
 
@@ -236,6 +242,10 @@ section .data
 
 %%s403:
     PRINT log_status_403, log_status_403_len
+    jmp %%done
+
+%%s401:
+    PRINT log_status_401, log_status_401_len
     jmp %%done
 
 %%s400:

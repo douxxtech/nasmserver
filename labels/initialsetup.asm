@@ -17,42 +17,54 @@ section .data
     key_name              db "SERVER_NAME", 0     ; server name provided in the response headers
     default_name          db "NASMServer/", 0     ; version will be appended later
 
+    key_authuser          db "AUTH_USER", 0
+    default_authuser      db "", 0
+
+    key_authpass          db "AUTH_PASSWORD", 0
+    default_authpass      db "", 0
+
     ; errordocs files, relatively to the document_root (empty = none)
     ; start them with a slash !
 
     key_errordoc_405      db "ERRORDOC_405", 0
     key_errordoc_404      db "ERRORDOC_404", 0
     key_errordoc_403      db "ERRORDOC_403", 0
+    key_errordoc_401      db "ERRORDOC_401", 0
     key_errordoc_400      db "ERRORDOC_400", 0
 
     default_errordoc_405  db "", 0
     default_errordoc_404  db "", 0
     default_errordoc_403  db "", 0
+    default_errordoc_401  db "", 0
     default_errordoc_400  db "", 0
 
 section .bss
     ; config (loaded from .env at startup)
-    ; all custom paths are 128 chars max for consistency
+    ; all custom paths are 128 chars max for consistency (129 for the null byte)
 
-    env_path_buf       resb 128
+    env_path_buf       resb 129
     port_str_buf       resb 8    ; ascii port from .env before ATOI
     port               resw 1    ; port number (host byte order)
     interface          resd 1    ; 0 = 0.0.0.0
     max_conns          resb 1    ; max simultaneous connections (max 255)
-    document_root      resb 128  ; document root, no trailing slash !
-    index_file         resb 128  ; default index file
+    document_root      resb 129  ; document root, no trailing slash !
+    index_file         resb 129  ; default index file
     server_w_ver       resb 24   ; The default server with the version (24 chars should be enough)
-    server_name        resb 128  ; Server: header value
-    errordoc_405       resb 128  ; relative to document_root, start with /
-    errordoc_404       resb 128
-    errordoc_403       resb 128
-    errordoc_400       resb 128
+    server_name        resb 129  ; Server: header value
+    auth_username      resb 129  ; for HTTP 1.0 authentication
+    auth_password      resb 129
+    errordoc_405       resb 129  ; relative to document_root, start with /
+    errordoc_404       resb 129
+    errordoc_403       resb 129
+    errordoc_400       resb 129
+    errordoc_401       resb 129
 
-    ; error doc paths (built at startup from document_root + errordoc_*)
-    errordoc_400_path  resb 256
-    errordoc_403_path  resb 256
-    errordoc_404_path  resb 256
-    errordoc_405_path  resb 256
+    ; error doc paths (built at startup from document_root + errordoc_* + NUL)
+    errordoc_405_path  resb 257
+    errordoc_404_path  resb 257
+    errordoc_403_path  resb 257
+    errordoc_401_path  resb 257
+    errordoc_400_path  resb 257
 
 section .text
     global initial_setup
@@ -111,14 +123,17 @@ initial_setup:
 .load_env:
     ; load all config from .env (or fall back to defaults)
 
-    ENV_DEFAULT env_path_buf, key_docroot, document_root, 128, default_docroot
-    ENV_DEFAULT env_path_buf, key_index,   index_file,    128,  default_index
-    ENV_DEFAULT env_path_buf, key_name,    server_name,   128,  server_w_ver
+    ENV_DEFAULT env_path_buf, key_docroot,      document_root,  129,  default_docroot
+    ENV_DEFAULT env_path_buf, key_index,        index_file,     129,  default_index
+    ENV_DEFAULT env_path_buf, key_name,         server_name,    129,  server_w_ver
+    ENV_DEFAULT env_path_buf, key_authuser,     auth_username,  129,  default_authuser
+    ENV_DEFAULT env_path_buf, key_authpass,     auth_password,  129,  default_authpass
 
-    ENV_DEFAULT env_path_buf, key_errordoc_405, errordoc_405, 128, default_errordoc_405
-    ENV_DEFAULT env_path_buf, key_errordoc_404, errordoc_404, 128, default_errordoc_404
-    ENV_DEFAULT env_path_buf, key_errordoc_403, errordoc_403, 128, default_errordoc_403
-    ENV_DEFAULT env_path_buf, key_errordoc_400, errordoc_400, 128, default_errordoc_400
+    ENV_DEFAULT env_path_buf, key_errordoc_405, errordoc_405,   129,  default_errordoc_405
+    ENV_DEFAULT env_path_buf, key_errordoc_404, errordoc_404,   129,  default_errordoc_404
+    ENV_DEFAULT env_path_buf, key_errordoc_403, errordoc_403,   129,  default_errordoc_403
+    ENV_DEFAULT env_path_buf, key_errordoc_401, errordoc_401,   129,  default_errordoc_401
+    ENV_DEFAULT env_path_buf, key_errordoc_400, errordoc_400,   129,  default_errordoc_400
 
     ; port: read as ascii, then convert to integer
     ENV_DEFAULT env_path_buf, key_port, port_str_buf, 8, default_port
@@ -142,6 +157,7 @@ initial_setup:
     BUILDPATH errordoc_405_path, document_root, errordoc_405
     BUILDPATH errordoc_404_path, document_root, errordoc_404
     BUILDPATH errordoc_403_path, document_root, errordoc_403
+    BUILDPATH errordoc_401_path, document_root, errordoc_401
     BUILDPATH errordoc_400_path, document_root, errordoc_400
 
     ret

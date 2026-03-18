@@ -41,19 +41,22 @@ parse_flags:
 
 
     ; check -h
-    STREQ rbp + 16 + rcx * 8, flag_str_h, rax
+    mov rsi, [rbp + 16 + rcx * 8]
+    STREQ rsi, flag_str_h, rax
 
     cmp rax, 1
     je .is_h
 
     ; check -e
-    STREQ rbp + 16 + rcx * 8, flag_str_e, rax
+    mov rsi, [rbp + 16 + rcx * 8]
+    STREQ rsi, flag_str_e, rax
 
     cmp rax, 1
     je .is_e
 
     ; check -v
-    STREQ rbp + 16 + rcx * 8, flag_str_v, rax
+    mov rsi, [rbp + 16 + rcx * 8]
+    STREQ rsi, flag_str_v, rax
 
     cmp rax, 1
     je .is_v
