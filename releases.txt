@@ -14,6 +14,16 @@
 # - Release description: detailed information about the release
 # - =--- END ---=: marks the end of the release 
 
+=--- v1.4 ---=
+### What changed
+- Added Basic Authentication support: you can now set `AUTH_USER` and `AUTH_PASSWORD` in your config file to password-protect your server
+- Added custom error page support for 401 Unauthorized
+
+> [!CAUTION]
+> The password is sent in Base64, which is easily readable by an attacker.  
+> To protect your login data, consider enabling HTTPS with a reverse proxy or a cloudflare tunnel.
+=--- END ---=
+
 =--- v1.3 ---=
 ### What changed
 - Requests and file paths now support longer inputs, so fewer unexpected 404s or truncated responses on complex URLs
