@@ -46,12 +46,12 @@ section .bss
     ; all custom paths are 128 chars max for consistency (129 for the null byte)
 
     env_path_buf       resb 129
-    port_str_buf       resb 8    ; ascii port from .env before ATOI
+    word_str_buf       resb 8    ; ascii port/max requests from .env before ATOI
     port               resw 1    ; port number (host byte order)
     interface          resd 1    ; 0 = 0.0.0.0
     max_age_str        resb 12   ; enough for "4294967295\0" (max value of resd 1)
     max_age            resd 1
-    max_conns          resb 1    ; max simultaneous connections (max 255)
+    max_requests          resw 1    ; max simultaneous connections (max 65535)
     document_root      resb 129  ; document root, no trailing slash !
     index_file         resb 129  ; default index file
     server_w_ver       resb 24   ; The default server with the version (24 chars should be enough)
@@ -76,7 +76,7 @@ section .text
 
 ; initial_setup
 ;   Loads configuration from a .env file (or -e) into BSS buffers.
-;   Populates: port, max_conns, document_root, index_file, server_name,
+;   Populates: port, max_requests, document_root, index_file, server_name,
 ;              errordoc_* paths, and sockaddr.
 ;   Exits with code 1 if -e was given but the file doesn't exist.
 ;   Exits with code 0 if the help was displayed (-h).
@@ -141,13 +141,13 @@ initial_setup:
     ENV_DEFAULT env_path_buf, key_errordoc_400, errordoc_400,   129,  default_errordoc_400
 
     ; port: read as ascii, then convert to integer
-    ENV_DEFAULT env_path_buf, key_port, port_str_buf, 8, default_port
-    ATOI port_str_buf, rax
+    ENV_DEFAULT env_path_buf, key_port, word_str_buf, 8, default_port
+    ATOI word_str_buf, rax
     mov word [port], ax
 
-    ENV_DEFAULT env_path_buf, key_maxconns, port_str_buf, 8, default_maxconns  ; reuse port_str_buf, we're done with it
-    ATOI port_str_buf, rax
-    mov byte [max_conns], al
+    ENV_DEFAULT env_path_buf, key_maxconns, word_str_buf, 8, default_maxconns  ; reuse word_str_buf, we're done with it
+    ATOI word_str_buf, rax
+    mov word [max_requests], ax
 
     ENV_DEFAULT env_path_buf, key_maxage, max_age_str, 12, default_maxage
     ATOI max_age_str, rax

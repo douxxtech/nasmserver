@@ -78,7 +78,7 @@ Copy `env.example` to `.env` and edit as needed. All keys are optional, and defa
 | `MAX_AGE` | `600` | Cache expiry offset in seconds for the `Expires:` header |
 | `AUTH_USER` | *(empty)* | Username for Basic Authentication. If set, authentication is enabled |
 | `AUTH_PASSWORD` | *(empty)* | Password for Basic Authentication. Only used if `AUTH_USER` is set |
-| `MAX_REQUESTS` | `20` | Max simultaneous connections (1–255) |
+| `MAX_REQUESTS` | `20` | Max simultaneous connections (1-65535) |
 | `SERVER_NAME` | `NASMServer/ver` | Value for the `Server:` response header |
 | `ERRORDOC_400` | *(empty)* | Error page path, relative to `DOCUMENT_ROOT`, must start with `/` |
 | `ERRORDOC_401` | *(empty)* | Same, for 401 |
