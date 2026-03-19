@@ -3,83 +3,83 @@
 section .data
 
     ; MIME type content-type strings. Taken from https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/MIME_types/Common_types
-    mime_type_html      db "Content-Type: text/html", 0
-    mime_type_css       db "Content-Type: text/css", 0
-    mime_type_js        db "Content-Type: text/javascript", 0
-    mime_type_json      db "Content-Type: application/json", 0
-    mime_type_xml       db "Content-Type: application/xml", 0
-    mime_type_csv       db "Content-Type: text/csv", 0
-    mime_type_md        db "Content-Type: text/markdown", 0
-    mime_type_manifest  db "Content-Type: application/manifest+json", 0
-    mime_type_plain     db "Content-Type: text/plain", 0
-    mime_type_png       db "Content-Type: image/png", 0
-    mime_type_jpg       db "Content-Type: image/jpeg", 0
-    mime_type_gif       db "Content-Type: image/gif", 0
-    mime_type_ico       db "Content-Type: image/vnd.microsoft.icon", 0
-    mime_type_svg       db "Content-Type: image/svg+xml", 0
-    mime_type_webp      db "Content-Type: image/webp", 0
-    mime_type_avif      db "Content-Type: image/avif", 0
-    mime_type_bmp       db "Content-Type: image/bmp", 0
-    mime_type_tiff      db "Content-Type: image/tiff", 0
-    mime_type_apng      db "Content-Type: image/apng", 0
-    mime_type_mp3       db "Content-Type: audio/mpeg", 0
-    mime_type_weba      db "Content-Type: audio/webm", 0
-    mime_type_wav       db "Content-Type: audio/wav", 0
-    mime_type_ogg       db "Content-Type: audio/ogg", 0
-    mime_type_aac       db "Content-Type: audio/aac", 0
-    mime_type_opus      db "Content-Type: audio/ogg", 0
-    mime_type_midi      db "Content-Type: audio/midi", 0
-    mime_type_mp4       db "Content-Type: video/mp4", 0
-    mime_type_webm      db "Content-Type: video/webm", 0
-    mime_type_mpeg      db "Content-Type: video/mpeg", 0
-    mime_type_ogv       db "Content-Type: video/ogg", 0
-    mime_type_avi       db "Content-Type: video/x-msvideo", 0
-    mime_type_3gp       db "Content-Type: video/3gpp", 0
-    mime_type_woff      db "Content-Type: font/woff", 0
-    mime_type_woff2     db "Content-Type: font/woff2", 0
-    mime_type_ttf       db "Content-Type: font/ttf", 0
-    mime_type_otf       db "Content-Type: font/otf", 0
-    mime_type_zip       db "Content-Type: application/zip", 0
-    mime_type_gz        db "Content-Type: application/gzip", 0
-    mime_type_tar       db "Content-Type: application/x-tar", 0
-    mime_type_epub      db "Content-Type: application/epub+zip", 0
-    mime_type_pdf       db "Content-Type: application/pdf", 0
-    mime_type_wasm      db "Content-Type: application/wasm", 0
-    mime_type_octet     db "Content-Type: application/octet-stream", 0
-    mime_type_abw       db "Content-Type: application/x-abiword", 0
-    mime_type_arc       db "Content-Type: application/x-freearc", 0
-    mime_type_azw       db "Content-Type: application/vnd.amazon.ebook", 0
-    mime_type_bin       db "Content-Type: application/octet-stream", 0
-    mime_type_bz        db "Content-Type: application/x-bzip", 0
-    mime_type_bz2       db "Content-Type: application/x-bzip2", 0
-    mime_type_cda       db "Content-Type: application/x-cdf", 0
-    mime_type_csh       db "Content-Type: application/x-csh", 0
-    mime_type_doc       db "Content-Type: application/msword", 0
-    mime_type_docx      db "Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document", 0
-    mime_type_eot       db "Content-Type: application/vnd.ms-fontobject", 0
-    mime_type_ics       db "Content-Type: text/calendar", 0
-    mime_type_jar       db "Content-Type: application/java-archive", 0
-    mime_type_jsonld    db "Content-Type: application/ld+json", 0
-    mime_type_mjs       db "Content-Type: text/javascript", 0
-    mime_type_mpkg      db "Content-Type: application/vnd.apple.installer+xml", 0
-    mime_type_odp       db "Content-Type: application/vnd.oasis.opendocument.presentation", 0
-    mime_type_ods       db "Content-Type: application/vnd.oasis.opendocument.spreadsheet", 0
-    mime_type_odt       db "Content-Type: application/vnd.oasis.opendocument.text", 0
-    mime_type_oga       db "Content-Type: audio/ogg", 0
-    mime_type_ogx       db "Content-Type: application/ogg", 0
-    mime_type_php       db "Content-Type: application/x-httpd-php", 0
-    mime_type_ppt       db "Content-Type: application/vnd.ms-powerpoint", 0
-    mime_type_pptx      db "Content-Type: application/vnd.openxmlformats-officedocument.presentationml.presentation", 0
-    mime_type_rar       db "Content-Type: application/vnd.rar", 0
-    mime_type_rtf       db "Content-Type: application/rtf", 0
-    mime_type_sh        db "Content-Type: application/x-sh", 0
-    mime_type_ts        db "Content-Type: video/mp2t", 0
-    mime_type_vsd       db "Content-Type: application/vnd.visio", 0
-    mime_type_xhtml     db "Content-Type: application/xhtml+xml", 0
-    mime_type_xls       db "Content-Type: application/vnd.ms-excel", 0
-    mime_type_xlsx      db "Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 0
-    mime_type_xul       db "Content-Type: application/vnd.mozilla.xul+xml", 0
-    mime_type_7z        db "Content-Type: application/x-7z-compressed", 0
+    mime_type_html      db "text/html", 0
+    mime_type_css       db "text/css", 0
+    mime_type_js        db "text/javascript", 0
+    mime_type_json      db "application/json", 0
+    mime_type_xml       db "application/xml", 0
+    mime_type_csv       db "text/csv", 0
+    mime_type_md        db "text/markdown", 0
+    mime_type_manifest  db "application/manifest+json", 0
+    mime_type_plain     db "text/plain", 0
+    mime_type_png       db "image/png", 0
+    mime_type_jpg       db "image/jpeg", 0
+    mime_type_gif       db "image/gif", 0
+    mime_type_ico       db "image/vnd.microsoft.icon", 0
+    mime_type_svg       db "image/svg+xml", 0
+    mime_type_webp      db "image/webp", 0
+    mime_type_avif      db "image/avif", 0
+    mime_type_bmp       db "image/bmp", 0
+    mime_type_tiff      db "image/tiff", 0
+    mime_type_apng      db "image/apng", 0
+    mime_type_mp3       db "audio/mpeg", 0
+    mime_type_weba      db "audio/webm", 0
+    mime_type_wav       db "audio/wav", 0
+    mime_type_ogg       db "audio/ogg", 0
+    mime_type_aac       db "audio/aac", 0
+    mime_type_opus      db "audio/ogg", 0
+    mime_type_midi      db "audio/midi", 0
+    mime_type_mp4       db "video/mp4", 0
+    mime_type_webm      db "video/webm", 0
+    mime_type_mpeg      db "video/mpeg", 0
+    mime_type_ogv       db "video/ogg", 0
+    mime_type_avi       db "video/x-msvideo", 0
+    mime_type_3gp       db "video/3gpp", 0
+    mime_type_woff      db "font/woff", 0
+    mime_type_woff2     db "font/woff2", 0
+    mime_type_ttf       db "font/ttf", 0
+    mime_type_otf       db "font/otf", 0
+    mime_type_zip       db "application/zip", 0
+    mime_type_gz        db "application/gzip", 0
+    mime_type_tar       db "application/x-tar", 0
+    mime_type_epub      db "application/epub+zip", 0
+    mime_type_pdf       db "application/pdf", 0
+    mime_type_wasm      db "application/wasm", 0
+    mime_type_octet     db "application/octet-stream", 0
+    mime_type_abw       db "application/x-abiword", 0
+    mime_type_arc       db "application/x-freearc", 0
+    mime_type_azw       db "application/vnd.amazon.ebook", 0
+    mime_type_bin       db "application/octet-stream", 0
+    mime_type_bz        db "application/x-bzip", 0
+    mime_type_bz2       db "application/x-bzip2", 0
+    mime_type_cda       db "application/x-cdf", 0
+    mime_type_csh       db "application/x-csh", 0
+    mime_type_doc       db "application/msword", 0
+    mime_type_docx      db "application/vnd.openxmlformats-officedocument.wordprocessingml.document", 0
+    mime_type_eot       db "application/vnd.ms-fontobject", 0
+    mime_type_ics       db "text/calendar", 0
+    mime_type_jar       db "application/java-archive", 0
+    mime_type_jsonld    db "application/ld+json", 0
+    mime_type_mjs       db "text/javascript", 0
+    mime_type_mpkg      db "application/vnd.apple.installer+xml", 0
+    mime_type_odp       db "application/vnd.oasis.opendocument.presentation", 0
+    mime_type_ods       db "application/vnd.oasis.opendocument.spreadsheet", 0
+    mime_type_odt       db "application/vnd.oasis.opendocument.text", 0
+    mime_type_oga       db "audio/ogg", 0
+    mime_type_ogx       db "application/ogg", 0
+    mime_type_php       db "application/x-httpd-php", 0
+    mime_type_ppt       db "application/vnd.ms-powerpoint", 0
+    mime_type_pptx      db "application/vnd.openxmlformats-officedocument.presentationml.presentation", 0
+    mime_type_rar       db "application/vnd.rar", 0
+    mime_type_rtf       db "application/rtf", 0
+    mime_type_sh        db "application/x-sh", 0
+    mime_type_ts        db "video/mp2t", 0
+    mime_type_vsd       db "application/vnd.visio", 0
+    mime_type_xhtml     db "application/xhtml+xml", 0
+    mime_type_xls       db "application/vnd.ms-excel", 0
+    mime_type_xlsx      db "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 0
+    mime_type_xul       db "application/vnd.mozilla.xul+xml", 0
+    mime_type_7z        db "application/x-7z-compressed", 0
 
     mime_ext_html      db "html", 0
     mime_ext_htm       db "htm", 0
@@ -253,7 +253,7 @@ section .text
 ;   Looks up the MIME Content-Type string for the file at path_ptr.
 ;   Args:
 ;     %1: pointer to null-terminated path string (e.g. "./index.txt")
-;     %2: register to store the result pointer (points to "Content-Type: ..." string)
+;     %2: register to store the result pointer (points to "..." string)
 ;   Returns:
 ;     %2 = pointer to the matching content-type string,
 ;          or mime_type_octet if extension is unknown/missing

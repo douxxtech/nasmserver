@@ -287,3 +287,23 @@ section .data
     mov rcx, http_date_tm_buf
     call strftime
 %endmacro
+
+%macro GET_HTTP_TIME 1
+    ; clock_gettime(CLOCK_REALTIME, &http_date_timespec)
+    mov rax, 228
+    xor rdi, rdi
+    mov rsi, http_date_timespec
+    syscall
+
+    ; gmtime_r(&tv_sec, &http_date_tm_buf)
+    mov rdi, http_date_timespec
+    mov rsi, http_date_tm_buf
+    call gmtime_r
+
+    ; strftime(out, 32, fmt, &tm)
+    mov rdi, %1
+    mov rsi, 32
+    mov rdx, http_date_fmt
+    mov rcx, http_date_tm_buf
+    call strftime
+%endmacro
