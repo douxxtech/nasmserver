@@ -1,0 +1,40 @@
+name: Benchmark PR
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**/*.asm'
+
+permissions:
+  pull-requests: write
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: sudo apt-get install -y nasm binutils wrk
+
+      - name: Run benchmarks
+        run: |
+          chmod +x .github/scripts/benchmark.sh
+          .github/scripts/benchmark.sh 1
+
+      - name: Format benchmark comment
+        run: |
+          WRK=$(awk '/^\[server\]/{skip=1} /^\[wrk\]/{skip=0} !skip' bm1.txt)
+          echo '```' > comment.md
+          echo "$WRK" >> comment.md
+          echo '```' >> comment.md
+
+      - name: Comment benchmark on PR
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: comment.md
