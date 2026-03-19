@@ -68,7 +68,7 @@ section .bss
     ; misc
     last_status       resw 1     ; for logs
     content_length_b  resb 20
-    process_count     resb 1     ; current processes count
+    process_count     resw 1     ; current processes count
     log_port_buf      resb 8     ; "65535\n\0" worst case
     header_time       resb 32    ; "Mon, 01 Jan 2000 00:00:00 GMT\0" + padding
 
@@ -140,7 +140,7 @@ _start:
     ; listen(fd, backlog)
     mov rax, 50
     mov rdi, r15
-    movzx rsi, byte [max_conns]
+    movzx rsi, byte [max_requests]
     syscall
 
     ; this mess prints the port log
@@ -173,16 +173,16 @@ _start:
     mov r14, rax              ; r14 will contain the client file descriptor
 
 .wait_for_slot:
-    movzx rax, byte [process_count]
-    cmp al, [max_conns]
-    jl .do_fork
+    movzx rax, word [process_count]
+    cmp ax, [max_requests]
+    jb .do_fork
 
     ; try reaping first in case some just finished
     call .reap_loop
 
-    movzx rax, byte [process_count]
-    cmp al, [max_conns]
-    jl .do_fork
+    movzx rax, word [process_count]
+    cmp ax, [max_requests]
+    jb .do_fork
 
     ; still full, drop the connection and warn
 
