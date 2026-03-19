@@ -67,9 +67,7 @@ run_bench() {
     threads_after=$(ls /proc/"$PID"/task 2>/dev/null | wc -l)
 
     {
-        echo "threads:  $threads (auto)"
-        echo "conns:    $conns"
-        echo "duration: ${duration}s"
+        echo "threads: $threads (auto), conns: $conns, duration: ${duration}s"
         echo ""
         echo "[server]"
         echo "cpu before/after:  ${cpu_before}% / ${cpu_after}%"

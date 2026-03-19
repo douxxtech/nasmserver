@@ -33,6 +33,23 @@ DESCRIPTION_FILE="/tmp/release-description.txt"
     if [ -n "$PREVIOUS_COMMIT" ]; then
         echo ""
 
+        # benchmark results
+        if [ -f bm1.txt ] && [ -f bm2.txt ] && [ -f bm3.txt ]; then
+            echo "<details>"
+            echo "<summary>Benchmark results</summary>"
+            echo ""
+            echo '```'
+            for i in 1 2 3; do
+                echo "<h3>Level $i</h3>"
+                cat "bm${i}.txt"
+                echo ""
+            done
+            echo '```'
+            echo ""
+            echo "</details>"
+            echo ""
+        fi
+
         echo "<details>"
         echo "<summary>Commit history</summary>"
         echo ""

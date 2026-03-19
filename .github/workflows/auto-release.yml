@@ -28,7 +28,7 @@ jobs:
 
       - name: Install build dependencies
         if: steps.parse.outputs.new_release == 'true'
-        run: sudo apt-get install -y nasm binutils patchelf
+        run: sudo apt-get install -y nasm binutils patchelf wrk
 
       - name: Build bundles
         if: steps.parse.outputs.new_release == 'true'
@@ -36,6 +36,12 @@ jobs:
           chmod +x .github/scripts/build-bundle.sh
           .github/scripts/build-bundle.sh x64
           .github/scripts/build-bundle.sh aarch64
+
+      - name: Run benchmarks
+        if: steps.parse.outputs.new_release == 'true'
+        run: |
+          chmod +x .github/scripts/benchmark.sh
+          .github/scripts/benchmark.sh
 
       - name: Generate release notes
         if: steps.parse.outputs.new_release == 'true'
@@ -56,6 +62,6 @@ jobs:
           files: |
             nasmserver-linux-x64.zip
             nasmserver-linux-aarch64.zip
-            
+
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
