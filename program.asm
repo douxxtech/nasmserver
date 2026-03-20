@@ -39,14 +39,15 @@ section .data
     response_200             db "HTTP/1.0 200 OK", 0
 
     allow_header             db "Allow: GET", 0
-    www_authenticate_header  db "WWW-Authenticate: Basic realm=", 0x22, "None", 0x22, 0  ;0x22 is "
+    www_authenticate_header  db "WWW-Authenticate: Basic realm=", 0x22, "None", 0x22, 0  ; 0x22 is "
     date_header              db "Date: ", 0
     server_header            db "Server: ", 0
     last_modified_header     db "Last-Modified: ", 0
     expires_header           db "Expires: ", 0
     content_type_header      db "Content-Type: ", 0
     content_length_header    db "Content-Length: ", 0
-    connection_close_header  db "Connection: close", 0
+    accept_ranges_header     db "Accept-Ranges: none", 0                                 ; We don't support ranging
+    connection_close_header  db "Connection: close", 0                                   ; We don't support keep alive
 
 
 section .bss
@@ -560,17 +561,21 @@ _start:
     mov rdi, [file_to_serve]
 
     cmp byte [rdi], 0
-    je .header_conn_close
+    je .accept_ranges_header
 
     FILE_SIZE rdi, rbx
 
     cmp rbx, 0                          ; rbx < 0 means that it failed, skipping header
-    jl .header_conn_close
+    jl .accept_ranges_header
 
     ITOA rbx, content_length_b, rcx
 
     AAPPEND r12, content_length_header
     AAPPEND r12, content_length_b
+    AAPPEND r12, crlf
+
+.accept_ranges_header:
+    AAPPEND r12, accept_ranges_header
     AAPPEND r12, crlf
 
 .header_conn_close:
