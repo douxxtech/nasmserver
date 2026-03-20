@@ -38,6 +38,7 @@ section .data
     response_400             db "HTTP/1.0 400 Bad Request", 0
     response_200             db "HTTP/1.0 200 OK", 0
 
+    allow_header             db "Allow: GET", 0
     www_authenticate_header  db "WWW-Authenticate: Basic realm=", 0x22, "None", 0x22, 0  ;0x22 is "
     date_header              db "Date: ", 0
     server_header            db "Server: ", 0
@@ -473,6 +474,8 @@ _start:
 
 .write_405:
     AAPPEND r12, response_405
+    AAPPEND r12, crlf
+    AAPPEND r12, allow_header
     AAPPEND r12, crlf
     jmp .header_date
 
