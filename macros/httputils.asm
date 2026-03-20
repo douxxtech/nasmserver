@@ -4,9 +4,9 @@ extern gmtime_r
 extern strftime
 
 section .data
-    http_date_fmt       db "%a, %d %b %Y %H:%M:%S GMT", 0  ; RFC 7231 date format
-    http_date_timespec  dq 0, 0                            ; tv_sec, tv_nsec (reused for expire calc)
-    http_date_tm_buf    times 64 db 0                      ; struct tm
+    http_date_fmt  db "%a, %d %b %Y %H:%M:%S GMT", 0  ; RFC 7231 date format
+    date_timespec  dq 0, 0                            ; tv_sec, tv_nsec (reused for expire calc)
+    date_tm_buf    times 64 db 0                      ; struct tm
 
 ; IS_HTTP_REQUEST buffer, length
 ;   Checks for "GET " prefix and "HTTP/1.x" just before the first CRLF.
@@ -264,46 +264,46 @@ section .data
 ;     %2 contains a null-terminated string like "Mon, 01 Jan 2000 00:00:00 GMT"
 ;   Clobbers: rax, rdi, rsi, rdx, rcx
 %macro HTTP_EXPIRE_DATE 2
-    ; clock_gettime(CLOCK_REALTIME, &http_date_timespec)
+    ; clock_gettime(CLOCK_REALTIME, &date_timespec)
     mov rax, 228
     xor rdi, rdi
-    mov rsi, http_date_timespec
+    mov rsi, date_timespec
     syscall
 
     ; add offset to tv_sec
-    mov rax, [http_date_timespec]
+    mov rax, [date_timespec]
     add rax, %1
-    mov [http_date_timespec], rax
+    mov [date_timespec], rax
 
-    ; gmtime_r(&tv_sec, &http_date_tm_buf)
-    mov rdi, http_date_timespec
-    mov rsi, http_date_tm_buf
+    ; gmtime_r(&tv_sec, &date_tm_buf)
+    mov rdi, date_timespec
+    mov rsi, date_tm_buf
     call gmtime_r
 
     ; strftime(out, 32, fmt, &tm)
     mov rdi, %2
     mov rsi, 32
     mov rdx, http_date_fmt
-    mov rcx, http_date_tm_buf
+    mov rcx, date_tm_buf
     call strftime
 %endmacro
 
 %macro GET_HTTP_TIME 1
-    ; clock_gettime(CLOCK_REALTIME, &http_date_timespec)
+    ; clock_gettime(CLOCK_REALTIME, &date_timespec)
     mov rax, 228
     xor rdi, rdi
-    mov rsi, http_date_timespec
+    mov rsi, date_timespec
     syscall
 
-    ; gmtime_r(&tv_sec, &http_date_tm_buf)
-    mov rdi, http_date_timespec
-    mov rsi, http_date_tm_buf
+    ; gmtime_r(&tv_sec, &date_tm_buf)
+    mov rdi, date_timespec
+    mov rsi, date_tm_buf
     call gmtime_r
 
     ; strftime(out, 32, fmt, &tm)
     mov rdi, %1
     mov rsi, 32
     mov rdx, http_date_fmt
-    mov rcx, http_date_tm_buf
+    mov rcx, date_tm_buf
     call strftime
 %endmacro

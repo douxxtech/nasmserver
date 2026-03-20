@@ -1,5 +1,8 @@
 ; fileutils.asm - File operation macros for x86_64 Linux
 
+extern gmtime_r
+extern strftime
+
 section .bss
     stat  resb 144  ; struct stat is 144 bytes on x86_64 linux (for content length)
 
@@ -64,6 +67,54 @@ section .bss
 
 %%not_found:
     mov rax, 0          ; does not exist
+
+%%done:
+    pop rsi
+    pop rdi
+%endmacro
+
+; FILE_LAST_MODIFIED path, out_buf
+;   Gets the last-modified time of a file as a null-terminated RFC 7231 date string.
+;   Args:
+;     %1: null-terminated path
+;     %2: output buffer, min 32b
+;   Returns:
+;     rax = 1 on success, 0 on error
+;   Clobbers: rax, rdi, rsi
+%macro FILE_LAST_MODIFIED 2
+    push rdi
+    push rsi
+
+    ; stat(path, statbuf)
+    mov rax, 4
+    mov rdi, %1
+    lea rsi, [stat]
+    syscall
+
+    cmp rax, 0
+    jl %%fail
+
+    ; some buffers are taken from httputils.asm, should clean that up one day
+    mov rax, [stat + 88]      ; st_mtime is at offset 88 in struct stat
+    mov [date_timespec], rax
+
+    ; gmtime_r(&tv_sec, &date_tm_buf)
+    mov rdi, date_timespec
+    mov rsi, date_tm_buf
+    call gmtime_r
+
+    ; strftime(out, 32, fmt, &tm)
+    mov rdi, %2
+    mov rsi, 32
+    mov rdx, http_date_fmt
+    mov rcx, date_tm_buf
+    call strftime
+
+    mov rax, 1
+    jmp %%done
+
+%%fail:
+    mov rax, 0
 
 %%done:
     pop rsi
