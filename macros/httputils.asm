@@ -6,7 +6,9 @@ extern strftime
 section .data
     http_date_fmt  db "%a, %d %b %Y %H:%M:%S GMT", 0  ; RFC 7231 date format
     date_timespec  dq 0, 0                            ; tv_sec, tv_nsec (reused for expire calc)
-    date_tm_buf    times 64 db 0                      ; struct tm
+
+section .bss
+    date_tm_buf    resb 64  ; struct tm
 
 ; IS_HTTP_REQUEST buffer, length
 ;   Checks for "GET " prefix and "HTTP/1.x" just before the first CRLF.
