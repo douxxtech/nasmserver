@@ -38,7 +38,7 @@ section .data
     response_400             db "HTTP/1.0 400 Bad Request", 0
     response_200             db "HTTP/1.0 200 OK", 0
 
-    allow_header             db "Allow: GET", 0
+    allow_header             db "Allow: GET, HEAD", 0
     www_authenticate_header  db "WWW-Authenticate: Basic realm=", 0x22, "None", 0x22, 0  ; 0x22 is "
     date_header              db "Date: ", 0
     server_header            db "Server: ", 0
@@ -74,6 +74,7 @@ section .bss
     process_count     resw 1     ; current processes count
     log_port_buf      resb 8     ; "65535\n\0" worst case
     header_time       resb 32    ; "Mon, 01 Jan 2000 00:00:00 GMT\0" + padding
+    request_type      resb 1     ; GET = 0, HEAD = 1
 
 section .text
     global _start
@@ -243,8 +244,7 @@ _start:
 
     IS_HTTP_REQUEST request, 8192
 
-    cmp rax, 1
-    je .get
+
 
     cmp rax, -405
     je .method_not_allowed
@@ -252,9 +252,22 @@ _start:
     cmp rax, -400
     je .bad_request
 
+    cmp rax, -200
+    je .head
+
+    cmp rax, 200
+    je .get
+
     jmp .forbidden                 ; in case i add a new code and forgot to implement it here
 
 .get:
+    mov byte [request_type], 0
+    jmp .auth_check
+
+.head:
+    mov byte [request_type], 1
+
+.auth_check:
     ; if no auth is configured, go to auth_ok (no auth setuped)
     cmp byte [auth_username], 0
     je .auth_ok
@@ -588,6 +601,10 @@ _start:
 
 .send:
     PRINTF r14, r13, r12      ; send the headers first
+
+    ; directly end if it's a HEAD request
+    cmp byte [request_type], 1
+    je .end
 
     ; serve the file if one was set
     mov r10, [file_to_serve]

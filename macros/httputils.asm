@@ -11,14 +11,14 @@ section .bss
     date_tm_buf    resb 64  ; struct tm
 
 ; IS_HTTP_REQUEST buffer, length
-;   Checks for "GET " prefix and "HTTP/1.x" just before the first CRLF.
+;   Checks for "GET "/"HEAD " prefix and "HTTP/1.x" just before the first CRLF.
 ;   Intentional note: We're treating 'HTTP/1.1' as a valid one, even if we return HTTP/1.0.
 ;   The clients will handle that by themselves, like big boys.
 ;   Args:
 ;     %1: buffer address
 ;     %2: buffer length
 ;   Returns:
-;     rax = 1 if valid, -400 if invalid, and -405 if the method isn't allowed
+;     rax = 200 if GET, -200 if HEAD, -400 if invalid, and -405 if the method isn't allowed
 ;   Clobbers: rax, rsi, r8
 %macro IS_HTTP_REQUEST 2
     push rsi
@@ -52,16 +52,29 @@ section .bss
     jne %%invalid
 
 %%is_http:
-    ; check if its a GET request (static file host, we don't allow other requests)
-    cmp dword [rsi], 0x20544547             ; "GET "
-    jne %%method_not_allowed
+    ; check if its a supported request (GET, HEAD)
+    cmp dword [rsi], 0x20544547     ; "GET "
+    je %%get
 
-%%valid:
-    mov rax, 1
+    cmp dword [rsi], 0x44414548     ; "HEAD"
+    jne %%method_not_allowed
+    cmp byte  [rsi + 4], 0x20       ; " "
+    je %%head
+
+    jmp %%method_not_allowed       
+
+
+%%get:
+    mov rax, 200
     jmp %%done
 
 %%method_not_allowed:
     mov rax, -405 ; negative codes are often used for errors in asm
+    jmp %%done
+
+
+%%head:
+    mov rax, -200
     jmp %%done
 
 %%invalid:
