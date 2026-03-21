@@ -340,7 +340,7 @@ _start:
     STRCUT path, '?'                              ; remove the ?query=string, we won't process it as a static site
 
     cmp byte [path + rax], '/'
-    jne .check_exists
+    jne .check_dotfile
 
 .add_index:
     mov byte [is_dir], 1  ; for later processing
@@ -353,6 +353,16 @@ _start:
 
     test al, al
     jnz .add_index
+
+.check_dotfile:
+    ; check if someone is trying to get a dotfile
+    cmp byte [serve_dotfiles], 1  ; if the user want to serve dotfiles, just skip
+    je .check_exists
+
+    PATH_HAS_DOT path, rcx
+
+    cmp rcx, 1
+    je .forbidden
 
 .check_exists:
 
