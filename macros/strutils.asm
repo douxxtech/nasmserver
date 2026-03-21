@@ -239,6 +239,62 @@
 %%done:
 %endmacro
 
+; PATH_HAS_DOT path, out_reg
+;   Checks if any component of a path starts with a dot, ignoring '.' and '..'
+;   Args:
+;     %1: pointer to null-terminated path string
+;     %2: register to store result (1 if a dot entry was found, 0 otherwise)
+;   Clobbers: rax, rsi
+%macro PATH_HAS_DOT 2
+    ; /hi/.dir/hello.txt -> 1 (dotdir in the middle)
+    ; /hello/.dotfile    -> 1 (dotfile at the end)
+    ; ./hi/index.html    -> 0 (leading ./ is ignored)
+    ; /hi/../hello.txt   -> 0 (.. is ignored)
+
+    lea rsi, [%1]
+    xor %2, %2     ; assume good
+
+%%next:
+    mov al, [rsi]
+    test al, al
+    jz %%done            ; end, nothing flagged
+
+    cmp al, '/'
+    jne %%advance        ; not a slash, continue
+
+    inc rsi              ; skip the '/'
+    cmp byte [rsi], '.'  ; does the part start with a dot?
+    jne %%next
+
+    ; starts with '.', now check if it's just '.' or '..'
+    mov al, [rsi + 1]
+    cmp al, '/'
+    je %%next          ; skip './'
+
+    cmp al, 0
+    je %%next          ; it's '.' at end of path, skip
+
+    cmp al, '.'
+    jne %%flagged       ; second char isn't a dot = flagged
+
+    mov al, [rsi + 2]
+    cmp al, '/'
+    je %%next           ; skip'../'
+
+    cmp al, 0
+    je %%next
+
+%%flagged:
+    mov %2, 1
+    jmp %%done
+
+%%advance:
+    inc rsi
+    jmp %%next
+
+%%done:
+%endmacro
+
 ; B64_DECODE src, dst, out_len_reg
 ;   Decodes a null-terminated base64 string into a buffer.
 ;   Args:
