@@ -77,6 +77,7 @@ section .bss
     log_port_buf      resb 8     ; "65535\n\0" worst case
     header_time       resb 32    ; "Mon, 01 Jan 2000 00:00:00 GMT\0" + padding
     request_type      resb 1     ; GET = 0, HEAD = 1
+    is_dir            resb 1     ; To 403 on dirs that don't have an index file
 
 section .text
     global _start
@@ -342,6 +343,8 @@ _start:
     jne .check_exists
 
 .add_index:
+    mov byte [is_dir], 1  ; for later processing
+
     mov al, [rsi]
     mov [rdi], al
 
@@ -417,6 +420,9 @@ _start:
     jmp .send
 
 .not_found:
+    cmp byte [is_dir], 1                          ; if it's a dir, but with no index file, send a 403 instead 
+    je .forbidden
+
     lea r13, [response]
     lea r12, [response]
     mov qword [file_to_serve], errordoc_404_path
