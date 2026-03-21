@@ -14,6 +14,14 @@
 # - Release description: detailed information about the release
 # - =--- END ---=: marks the end of the release 
 
+=--- v1.7 ---=
+### What changed
+- Added `SERVE_DOTS` config option to control whether dotfiles and dotfolders are served (default: `false`, they are blocked)
+- Directories with no index file now return `403 Forbidden` instead of `404 Not Found`
+- Responses now include a `Content-Encoding: identity` header when serving files
+- Responses now include a `Pragma: no-cache` header when `MAX_AGE` is set to `0`
+=--- END ---=
+
 =--- v1.6 ---=
 ### What changed
 - Added `HEAD` request support: clients can now request headers only without downloading the file body
