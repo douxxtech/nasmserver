@@ -42,6 +42,7 @@ section .data
     www_authenticate_header  db "WWW-Authenticate: Basic realm=", 0x22, "None", 0x22, 0  ; 0x22 is "
     date_header              db "Date: ", 0
     server_header            db "Server: ", 0
+    pragma_header            db "Pragma: no-cache", 0
     last_modified_header     db "Last-Modified: ", 0
     expires_header           db "Expires: ", 0
     content_type_header      db "Content-Type: ", 0
@@ -530,6 +531,13 @@ _start:
 .header_server:
     AAPPEND r12, server_header
     AAPPEND r12, server_name
+    AAPPEND r12, crlf
+
+.header_pragma:
+    cmp dword [max_age], 0     ; if maxage is < 0, we don't send the pragma: no-cache header
+    ja .header_last_modified   ; jump above (jg unsigned)
+
+    AAPPEND r12, pragma_header
     AAPPEND r12, crlf
 
 .header_last_modified:

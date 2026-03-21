@@ -51,7 +51,7 @@ section .bss
     interface          resd 1    ; 0 = 0.0.0.0
     max_age_str        resb 12   ; enough for "4294967295\0" (max value of resd 1)
     max_age            resd 1
-    max_requests          resw 1    ; max simultaneous connections (max 65535)
+    max_requests       resw 1    ; max simultaneous connections (max 65535)
     document_root      resb 129  ; document root, no trailing slash !
     index_file         resb 129  ; default index file
     server_w_ver       resb 24   ; The default server with the version (24 chars should be enough)

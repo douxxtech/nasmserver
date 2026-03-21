@@ -75,7 +75,7 @@ Copy `env.example` to `.env` and edit as needed. All keys are optional, and defa
 | `PORT` | `8080` | Port to listen on |
 | `DOCUMENT_ROOT` | `.` | Document root directory, no trailing slash |
 | `INDEX_FILE` | `index.html` | File served when a directory is requested |
-| `MAX_AGE` | `600` | Cache expiry offset in seconds for the `Expires:` header |
+| `MAX_AGE` | `600` | Cache expiry offset in seconds for the `Expires:` header. Sets the `Pragma: no-cache` header if `0`.|
 | `AUTH_USER` | *(empty)* | Username for Basic Authentication. If set, authentication is enabled |
 | `AUTH_PASSWORD` | *(empty)* | Password for Basic Authentication. Only used if `AUTH_USER` is set |
 | `MAX_REQUESTS` | `20` | Max simultaneous connections (1-65535) |
