@@ -46,9 +46,10 @@ section .data
     last_modified_header     db "Last-Modified: ", 0
     expires_header           db "Expires: ", 0
     content_type_header      db "Content-Type: ", 0
+    content_encoding_header  db "Content-Encoding: identity", 0  ; identity = not changed
     content_length_header    db "Content-Length: ", 0
-    accept_ranges_header     db "Accept-Ranges: none", 0                                 ; We don't support ranging
-    connection_close_header  db "Connection: close", 0                                   ; We don't support keep alive
+    accept_ranges_header     db "Accept-Ranges: none", 0         ; We don't support ranging
+    connection_close_header  db "Connection: close", 0           ; We don't support keep alive
 
 
 section .bss
@@ -566,7 +567,7 @@ _start:
     mov rdi, [file_to_serve]
 
     cmp byte [rdi], 0
-    je .header_content_length
+    je .header_content_encoding
 
     AAPPEND r12, content_type_header
 
@@ -576,6 +577,17 @@ _start:
     
     AAPPEND r12, rdi
     AAPPEND r12, crlf
+
+.header_content_encoding:
+    ; content type detection
+    mov rdi, [file_to_serve]
+
+    cmp byte [rdi], 0
+    je .header_content_length
+
+    AAPPEND r12, content_encoding_header
+    AAPPEND r12, crlf
+
 
 .header_content_length:
     ; very similar to the previous one
