@@ -28,7 +28,7 @@ jobs:
 
       - name: Install build dependencies
         if: steps.parse.outputs.new_release == 'true'
-        run: sudo apt-get install -y nasm binutils patchelf wrk
+        run: sudo apt-get install -y nasm binutils patchelf wrk strace
 
       - name: Build bundles
         if: steps.parse.outputs.new_release == 'true'
@@ -36,6 +36,18 @@ jobs:
           chmod +x .github/scripts/build-bundle.sh
           .github/scripts/build-bundle.sh x64
           .github/scripts/build-bundle.sh aarch64
+
+      - name: Check binary size
+        if: steps.parse.outputs.new_release == 'true'
+        run: |
+          chmod +x .github/scripts/binary-size.sh
+          .github/scripts/binary-size.sh > bin-size.txt
+
+      - name: Run syscalls tests
+        if: steps.parse.outputs.new_release == 'true'
+        run: |
+          chmod +x .github/scripts/syscalls.sh
+          .github/scripts/syscalls.sh > syscalls-results.txt
 
       - name: Run benchmarks
         if: steps.parse.outputs.new_release == 'true'
