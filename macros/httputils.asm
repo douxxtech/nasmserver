@@ -290,6 +290,10 @@ section .bss
 
     cmp byte [rsi + r8], 'I'
     jne %%ims_next
+    cmp r8, 2
+    jl %%ims_next
+    cmp word [rsi + r8 - 2], 0x0a0d
+    jne %%ims_next
 
     ; "If-M" = 0x4d2d6649
     ; "odif" = 0x6669646f
