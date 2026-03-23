@@ -270,7 +270,7 @@ section .bss
 %endmacro
 
 ; HTTP_EXPIRE_DATE offset_sec, out_buf
-;   Builds a null-terminated RFC 7231 GMT date string for use in Expires: headers.
+;   Builds a null-terminated RFC 7231 GMT date string for use in HTTP headers.
 ;   Takes the current wall-clock time, adds offset_sec seconds, then formats it.
 ;   Args:
 ;     %1: offset in seconds to add (immediate or register)
@@ -303,6 +303,13 @@ section .bss
     call strftime
 %endmacro
 
+; GET_HTTP_TIME out_buf
+;   Builds a null-terminated RFC 7231 / HTTP/1.0 GMT date string for the current time.
+;   Args:
+;     %1: output buffer, min 32 bytes
+;   Returns:
+;     %1 contains a string like "Mon, 01 Jan 2000 00:00:00 GMT"
+;   Clobbers: rax, rdi, rsi, rdx, rcx
 %macro GET_HTTP_TIME 1
     ; clock_gettime(CLOCK_REALTIME, &date_timespec)
     mov rax, 228
