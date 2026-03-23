@@ -285,13 +285,16 @@ section .bss
 %%ims_scan:
     mov rax, r8
     add rax, 20               ; "If-Modified-Since: " = 19 bytes + 1 byte value
+
     cmp rax, %2
     jg %%not_found
 
     cmp byte [rsi + r8], 'I'
     jne %%ims_next
+
     cmp r8, 2
     jl %%ims_next
+
     cmp word [rsi + r8 - 2], 0x0a0d
     jne %%ims_next
 
@@ -320,10 +323,12 @@ section .bss
 %%ims_copy:
     mov rax, r8
     add rax, r9
+
     cmp rax, %2
     jge %%ims_done
 
     movzx rax, byte [rsi + rax]
+    
     cmp al, 0x0d                 ; \r = end of header value
     je %%ims_done
 
