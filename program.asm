@@ -36,6 +36,7 @@ section .data
     response_403             db "HTTP/1.0 403 Forbidden", 0
     response_401             db "HTTP/1.0 401 Unauthorized", 0
     response_400             db "HTTP/1.0 400 Bad Request", 0
+    response_304             db "HTTP/1.0 304 Not Modified", 0
     response_200             db "HTTP/1.0 200 OK", 0
 
     allow_header             db "Allow: GET, HEAD", 0
@@ -50,6 +51,8 @@ section .data
     content_length_header    db "Content-Length: ", 0
     accept_ranges_header     db "Accept-Ranges: none", 0         ; We don't support ranging
     connection_close_header  db "Connection: close", 0           ; We don't support keep alive
+
+    empty                    db 0                                ; for some checks
 
 
 section .bss
@@ -408,6 +411,33 @@ _start:
     lea r10, [path]
     mov [file_to_serve], r10
 
+    ; check for If-Modified-Since header
+    PARSE_IMS_HEADER request, 8192, header_time
+
+    cmp byte [header_time], 0                    ; no ims header = serve
+    je .ok_modified
+
+    ; otherwise, process the ims thing and eventually return a 304
+    HTTP_PARSE_TIME header_time, rbx
+
+    cmp rbx, -1                                  ; invalid format
+    je .ok_modified
+
+    ; stat(path, statbuf)
+    mov rax, 4
+    mov rdi, [file_to_serve]
+    lea rsi, [stat]                              ; [stat] is from fileutils.asm
+    syscall
+
+    cmp rax, 0
+    jl .ok_modified
+
+    mov rax, [stat + 88]                         ; st_mtime
+
+    cmp rax, rbx                                 ; file_mtime >= ims_time?
+    jle .not_modified
+
+.ok_modified:
     mov rdi, 200
     call .write_header
 
@@ -484,6 +514,18 @@ _start:
     mov word [last_status], 400
     jmp .send
 
+.not_modified:
+    lea r13, [response]
+    lea r12, [response]
+    mov qword [file_to_serve], empty
+    
+    mov rdi, 304
+    call .write_header
+
+    sub r12, r13
+    mov word [last_status], 304
+    jmp .send
+
 .write_header:
     ; rdi: status code (200, 400, 403, 404 or 405)
     ; appends the HTTP header to the 'response' buffer
@@ -502,6 +544,9 @@ _start:
 
     cmp rdi, 400
     je .write_400
+
+    cmp rdi, 304
+    je .write_304
 
     jmp .write_200
 
@@ -531,6 +576,11 @@ _start:
 
 .write_400:
     AAPPEND r12, response_400
+    AAPPEND r12, crlf
+    jmp .header_date
+
+.write_304:
+    AAPPEND r12, response_304
     AAPPEND r12, crlf
     jmp .header_date
 

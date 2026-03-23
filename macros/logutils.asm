@@ -79,6 +79,9 @@ section .data
     log_status_200                  db "200 OK", 0xa, 0
     log_status_200_len              equ $ - log_status_200 - 1
 
+    log_status_304                  db "304 Not Modified", 0xa, 0
+    log_status_304_len              equ $ - log_status_304 - 1
+
     log_status_400                  db "400 Bad Request", 0xa, 0
     log_status_400_len              equ $ - log_status_400 - 1
 
@@ -230,6 +233,9 @@ section .data
     cmp %2, 400
     je %%s400
 
+    cmp %2, 304
+    je %%s304
+
     jmp %%s200
 
 %%s405:
@@ -250,6 +256,10 @@ section .data
 
 %%s400:
     PRINT log_status_400, log_status_400_len
+    jmp %%done
+
+%%s304:
+    PRINT log_status_304, log_status_304_len
     jmp %%done
 
 %%s200:

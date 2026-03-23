@@ -2,6 +2,8 @@
 
 extern gmtime_r
 extern strftime
+extern strptime
+extern timegm
 
 section .data
     http_date_fmt  db "%a, %d %b %Y %H:%M:%S GMT", 0  ; RFC 7231 date format
@@ -269,6 +271,80 @@ section .bss
 %%done:
 %endmacro
 
+; PARSE_IMS_HEADER buffer, length, out_buf
+;   Scans headers for "If-Modified-Since: " and copies the value into out_buf.
+;   Args:
+;     %1: buffer address
+;     %2: buffer length
+;     %3: output buffer (min 32 bytes), zeroed on failure
+;   Clobbers: rax, rsi, r8, r9, rdi
+%macro PARSE_IMS_HEADER 3
+    mov rsi, %1
+    xor r8, r8
+
+%%ims_scan:
+    mov rax, r8
+    add rax, 20               ; "If-Modified-Since: " = 19 bytes + 1 byte value
+    cmp rax, %2
+    jg %%not_found
+
+    cmp byte [rsi + r8], 'I'
+    jne %%ims_next
+
+    ; "If-M" = 0x4d2d6649
+    ; "odif" = 0x6669646f
+    ; "ied-" = 0x2d646569
+    ; "Sinc" = 0x636e6953
+    ; "e: "  = 0x3a65 (word) + 0x20 (byte)
+    cmp dword [rsi + r8 +  0], 0x4d2d6649
+    jne %%ims_next
+    cmp dword [rsi + r8 +  4], 0x6669646f
+    jne %%ims_next
+    cmp dword [rsi + r8 +  8], 0x2d646569
+    jne %%ims_next
+    cmp dword [rsi + r8 + 12], 0x636e6953
+    jne %%ims_next
+    cmp word  [rsi + r8 + 16], 0x3a65     ; "e:"
+    jne %%ims_next
+    cmp byte  [rsi + r8 + 18], 0x20       ; " "
+    jne %%ims_next
+
+    add r8, 19     ; skip past "If-Modified-Since: "
+    xor r9, r9
+    lea rdi, [%3]
+
+%%ims_copy:
+    mov rax, r8
+    add rax, r9
+    cmp rax, %2
+    jge %%ims_done
+
+    movzx rax, byte [rsi + rax]
+    cmp al, 0x0d                 ; \r = end of header value
+    je %%ims_done
+
+    mov [rdi + r9], al
+    inc r9
+
+    cmp r9, 31
+    jge %%ims_done
+
+    jmp %%ims_copy
+
+%%ims_done:
+    mov byte [rdi + r9], 0
+    jmp %%done
+
+%%ims_next:
+    inc r8
+    jmp %%ims_scan
+
+%%not_found:
+    mov byte [%3], 0
+
+%%done:
+%endmacro
+
 ; HTTP_EXPIRE_DATE offset_sec, out_buf
 ;   Builds a null-terminated RFC 7231 GMT date string for use in HTTP headers.
 ;   Takes the current wall-clock time, adds offset_sec seconds, then formats it.
@@ -328,4 +404,38 @@ section .bss
     mov rdx, http_date_fmt
     mov rcx, date_tm_buf
     call strftime
+%endmacro
+
+; HTTP_PARSE_TIME in_buf, out_reg
+;   Parses an RFC 7231 HTTP-date string (GMT) into epoch seconds.
+;   Expected format: "%a, %d %b %Y %H:%M:%S GMT"
+;   Args:
+;     %1: input buffer (null-terminated HTTP date string)
+;     %2: register to receive epoch time (time_t)
+;   Returns:
+;     %2 = epoch seconds on success -1 on failure (parse error)
+;   Clobbers: rax, rdi, rsi, rdx, rcx
+%macro HTTP_PARSE_TIME 2
+    ; strptime(in, fmt, tm)
+    mov rdi, %1
+    mov rsi, http_date_fmt
+    mov rdx, date_tm_buf
+
+    call strptime
+
+    ; strptime returns 0 on failure
+    test rax, rax
+    jz %%parse_fail
+
+    ; timegm(&tm)
+    mov rdi, date_tm_buf
+    call timegm             ; returns time_t in rax
+
+    mov %2, rax
+    jmp %%done
+
+%%parse_fail:
+    mov %2, -1
+
+%%done:
 %endmacro
