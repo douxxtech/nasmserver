@@ -14,6 +14,13 @@
 # - Release description: detailed information about the release
 # - =--- END ---=: marks the end of the release 
 
+=--- v1.8 ---=
+### What changed
+- Added `If-Modified-Since` support: conditional GET requests now return `304 Not Modified` when appropriate.
+- CI/CD now tracks binary size and syscall stats for releases (see below).
+=--- END ---=
+
+
 =--- v1.7 ---=
 ### What changed
 - Added `SERVE_DOTS` config option to control whether dotfiles and dotfolders are served (default: `false`, they are blocked)
