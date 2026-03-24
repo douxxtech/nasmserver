@@ -4,11 +4,13 @@ extern localtime_r
 extern strftime
 
 section .data
-    ts_fmt      db "%H:%M:%S ", 0  ; trailing space included
-    ts_buf      times 16 db 0      ; "HH:MM:SS \0" + padding
-    timespec    dq 0, 0            ; tv_sec, tv_nsec (struct timespec)
-    tm_buf      times 64 db 0      ; struct tm (libc)
+    ts_fmt      db "%H:%M:%S ", 0          ; trailing space included
+    timespec    dq 0, 0                    ; tv_sec, tv_nsec (struct timespec)
 
+    rs_fmt      db "%d/%b/%Y:%H:%M:%S %z", 0
+
+    log_space                      db " ", 0
+    log_space_len                  equ $ - log_space - 1
 
     ; log level prefixes
 
@@ -64,7 +66,7 @@ section .data
     log_listening_port_len          equ $ - log_listening_port - 1
 
 
-    ; request logging
+    ; request logging (common log format extended)
     log_request_pre                 db "Request: ", 0
     log_request_pre_len             equ $ - log_request_pre - 1
 
@@ -74,6 +76,20 @@ section .data
     log_thing                       db " - ", 0
     log_thing_len                   equ $ - log_thing - 1
 
+    clfe_missing                    db "-", 0
+    clfe_missing_len                equ $ - clfe_missing - 1
+
+    clfe_start_ts                   db "[", 0
+    clfe_start_ts_len               equ $ - clfe_start_ts - 1
+
+    clfe_end_ts                     db "]", 0
+    clfe_end_ts_len                 equ $ - clfe_end_ts - 1
+
+    clfe_qm                         db 0x22, 0  ; '"'
+    clfe_qm_len                     equ $ - clfe_qm - 1
+
+    clfe_nobytes                    db "0", 0
+    clfe_nobytes_len                equ $ - clfe_nobytes - 1
 
     ; HTTP status messages
     log_status_200                  db "200 OK", 0xa, 0
@@ -124,7 +140,12 @@ section .data
     log_version_len                 equ $ - log_version - 1
 
 
-; macros
+section .bss
+    tm_buf     resb 64  ; struct tm (libc)
+    ts_buf     resb 16  ; "HH:MM:SS \0" + padding
+    rs_buf     resb 32  ; "dd/mmm/yyyy:HH:MM:SS +-zzzz \0" + padding
+
+    status_buf resb 3
 
 ; PRINT_TIMESTAMP
 ;   Prints "HH:MM:SS " to stdout via clock_gettime + localtime_r + strftime.
@@ -266,4 +287,161 @@ section .data
     PRINT log_status_200, log_status_200_len
 
 %%done:
+%endmacro
+
+%macro LOG_REQUEST2 0
+
+%%pt1:
+    ; pt. 1: ip
+    lea r10, [client_ip_str]
+    STRLEN r10, rcx
+    PRINT r10, rcx
+    PRINT log_space, log_space_len
+
+%%pt2:
+    ; pt. 2: identity, not supported
+    PRINT clfe_missing, clfe_missing_len
+    PRINT log_space, log_space_len
+
+%%pt3:
+    ; pt. 3: auth
+    lea r10, [username]
+    STRLEN r10, rcx
+
+    cmp rcx, 0                       ; if empty, no auth
+    je %%no_auth
+
+    PRINT r10, rcx
+    PRINT log_space, log_space_len
+    
+    jmp %%pt4
+
+%%no_auth:
+    PRINT clfe_missing, clfe_missing_len
+    PRINT log_space, log_space_len
+
+%%pt4:
+    ; pt. 4: timestamp
+    PRINT clfe_start_ts, clfe_start_ts_len
+
+    ; get the current wall-clock time
+    ; clock_gettime(clockid, timespec)
+    mov rax, 228
+    xor rdi, rdi       ; CLOCK_REALTIME
+    mov rsi, timespec
+    syscall
+
+    ; localtime_r(&tv_sec, &tm_buf)
+    mov rdi, timespec
+    mov rsi, tm_buf
+    call localtime_r
+
+    ; strftime(rs_buf, 32, rs_fmt, &tm_buf)
+    mov rdi, rs_buf    ; fixed: write directly to rs_buf
+    mov rsi, 32        ; fixed: size matches rs_buf
+    mov rdx, rs_fmt
+    mov rcx, tm_buf    ; fixed: pass struct tm*, not rs_buf
+    call strftime
+
+    STRLEN rs_buf, rcx
+    PRINT rs_buf, rcx
+
+    PRINT clfe_end_ts, clfe_end_ts_len
+    PRINT log_space, log_space_len
+
+%%pt5:
+    PRINT clfe_qm, clfe_qm_len
+
+    lea r10, [request]
+    xor r9, r9
+
+%%req_scan:
+    cmp r9, 8192
+    jge %%req_print
+
+    movzx rax, byte [r10 + r9]
+    cmp al, 0x0d
+
+    je %%req_print
+    cmp al, 0
+
+    je %%req_print
+
+    inc r9
+    jmp %%req_scan
+
+%%req_print:
+    PRINT r10, r9
+
+    PRINT clfe_qm, clfe_qm_len
+    PRINT log_space, log_space_len
+
+%%pt6:
+    ; pt. 6: status code
+
+    movzx r10, word [last_status]
+
+    ITOA r10, status_buf, r9
+    PRINT status_buf, r9
+
+    PRINT log_space, log_space_len
+    
+%%pt7:
+    ; pt. 7: size
+    STRLEN content_length_b, rcx
+
+    cmp rcx, 0
+    je %%no_len
+
+    PRINT content_length_b, rcx
+    PRINT log_space, log_space_len
+
+    jmp %%pt8
+
+%%no_len:
+    PRINT clfe_nobytes, clfe_nobytes_len
+    PRINT log_space, log_space_len
+
+%%pt8:
+    ; pt. 8: "referer"
+    PRINT clfe_qm, clfe_qm_len
+
+    STRLEN referer, rcx
+
+    cmp rcx, 0
+    je %%no_referer
+
+    PRINT referer, rcx
+    PRINT clfe_qm, clfe_qm_len
+    PRINT log_space, log_space_len
+
+    jmp %%pt9
+
+%%no_referer:
+    PRINT clfe_missing, clfe_missing_len
+    PRINT clfe_qm, clfe_qm_len
+    PRINT log_space, log_space_len
+
+%%pt9:
+    ; pt. 9: user agent
+    PRINT clfe_qm, clfe_qm_len
+
+    STRLEN user_agent, rcx
+
+    cmp rcx, 0
+    je %%no_ua
+
+    PRINT user_agent, rcx
+    PRINT clfe_qm, clfe_qm_len
+    PRINT log_space, log_space_len
+
+    jmp %%done
+
+%%no_ua:
+    PRINT clfe_missing, clfe_missing_len
+    PRINT clfe_qm, clfe_qm_len
+    PRINT log_space, log_space_len
+
+%%done:
+    LF
 %endmacro
