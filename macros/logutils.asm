@@ -375,14 +375,12 @@ section .bss
 
     PRINT user_agent, rcx
     PRINT clfe_qm, clfe_qm_len
-    PRINT log_space, log_space_len
 
     jmp %%done
 
 %%no_ua:
     PRINT clfe_missing, clfe_missing_len
     PRINT clfe_qm, clfe_qm_len
-    PRINT log_space, log_space_len
 
 %%done:
     LF
