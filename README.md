@@ -22,6 +22,7 @@ I started learning NASM on a Monday afternoon, because I was bored in my NoSQL c
 - Concurrent request handling via `fork()`
 - Configurable `Server:` header
 - Per-request logging with timestamps and client IPs
+- Apache-HTTP-Server-like [Common Log Format](https://en.wikipedia.org/wiki/Common_Log_Format) logging
 
 ## What it does NOT support
 
@@ -32,6 +33,7 @@ I started learning NASM on a Monday afternoon, because I was bored in my NoSQL c
 - Range requests (`Range: bytes=...`)
 - Directory listing, directories without an index file return `403`
 - Query string processing, `?foo=bar` is stripped and ignored since it's a static file host
+- Logging to file (planned to be added soon)
 
 ## Usage (from a release)
 
