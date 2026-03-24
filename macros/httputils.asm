@@ -354,6 +354,171 @@ section .bss
 %%done:
 %endmacro
 
+; PARSE_UA_HEADER buffer, length, out_buf, max_len
+;   Scans headers for "User-Agent: " and copies the value into out_buf.
+;   Args:
+;     %1: buffer address
+;     %2: buffer length
+;     %3: output buffer, zeroed on failure
+;     %4: max bytes to copy (should be resb size - 1)
+;   Clobbers: rax, rsi, rdi, r8, r9
+%macro PARSE_UA_HEADER 4
+    mov rsi, %1
+    xor r8, r8
+
+
+%%ua_scan:
+    mov rax, r8
+    add rax, 13               ; "User-Agent: " = 12 bytes + 1 byte value
+
+    cmp rax, %2
+    jg %%ua_not_found
+
+    cmp byte [rsi + r8], 'U'
+    jne %%ua_next
+
+    cmp r8, 2
+    jl %%ua_next
+
+    cmp word [rsi + r8 - 2], 0x0a0d
+    jne %%ua_next
+
+    ; "User" = 0x72657355
+    ; "-Age" = 0x6567412d
+    ; "nt: " = 0x203a746e
+    cmp dword [rsi + r8 +  0], 0x72657355
+    jne %%ua_next
+    cmp dword [rsi + r8 +  4], 0x6567412d
+    jne %%ua_next
+    cmp dword [rsi + r8 +  8], 0x203a746e
+    jne %%ua_next
+
+    add r8, 12                ; skip past "User-Agent: "
+    xor r9, r9
+    lea rdi, [%3]
+
+
+%%ua_copy:
+    mov rax, r8
+    add rax, r9
+
+    cmp rax, %2
+    jge %%ua_done
+
+    movzx rax, byte [rsi + rax]
+
+    cmp al, 0x0d              ; \r = end of header value
+    je %%ua_done
+
+    mov [rdi + r9], al
+    inc r9
+
+    cmp r9, %4
+    jge %%ua_done
+
+    jmp %%ua_copy
+
+
+%%ua_done:
+    mov byte [rdi + r9], 0
+    jmp %%done
+
+
+%%ua_next:
+    inc r8
+    jmp %%ua_scan
+
+
+%%ua_not_found:
+    mov byte [%3], 0
+
+
+%%done:
+%endmacro
+
+
+; PARSE_REFERER_HEADER buffer, length, out_buf, max_len
+;   Scans headers for "Referer: " and copies the value into out_buf.
+;   Args:
+;     %1: buffer address
+;     %2: buffer length
+;     %3: output buffer, zeroed on failure
+;     %4: max bytes to copy (should be resb size - 1)
+;   Clobbers: rax, rsi, rdi, r8, r9
+%macro PARSE_REFERER_HEADER 4
+    mov rsi, %1
+    xor r8, r8
+
+
+%%ref_scan:
+    mov rax, r8
+    add rax, 10               ; "Referer: " = 9 bytes + 1 byte value
+
+    cmp rax, %2
+    jg %%ref_not_found
+
+    cmp byte [rsi + r8], 'R'
+    jne %%ref_next
+
+    cmp r8, 2
+    jl %%ref_next
+
+    cmp word [rsi + r8 - 2], 0x0a0d
+    jne %%ref_next
+
+    ; "Refe" = 0x65666552
+    ; "rer:" = 0x3a726572
+    ; " "   = 0x20
+    cmp dword [rsi + r8 + 0], 0x65666552
+    jne %%ref_next
+    cmp dword [rsi + r8 + 4], 0x3a726572
+    jne %%ref_next
+    cmp byte  [rsi + r8 + 8], 0x20
+    jne %%ref_next
+
+    add r8, 9                 ; skip past "Referer: "
+    xor r9, r9
+    lea rdi, [%3]
+
+
+%%ref_copy:
+    mov rax, r8
+    add rax, r9
+
+    cmp rax, %2
+    jge %%ref_done
+
+    movzx rax, byte [rsi + rax]
+
+    cmp al, 0x0d              ; \r = end of header value
+    je %%ref_done
+
+    mov [rdi + r9], al
+    inc r9
+
+    cmp r9, %4
+    jge %%ref_done
+
+    jmp %%ref_copy
+
+
+%%ref_done:
+    mov byte [rdi + r9], 0
+    jmp %%done
+
+
+%%ref_next:
+    inc r8
+    jmp %%ref_scan
+
+
+%%ref_not_found:
+    mov byte [%3], 0
+
+
+%%done:
+%endmacro
+
 ; HTTP_EXPIRE_DATE offset_sec, out_buf
 ;   Builds a null-terminated RFC 7231 GMT date string for use in HTTP headers.
 ;   Takes the current wall-clock time, adds offset_sec seconds, then formats it.

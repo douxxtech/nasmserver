@@ -4,11 +4,13 @@ extern localtime_r
 extern strftime
 
 section .data
-    ts_fmt      db "%H:%M:%S ", 0  ; trailing space included
-    ts_buf      times 16 db 0      ; "HH:MM:SS \0" + padding
-    timespec    dq 0, 0            ; tv_sec, tv_nsec (struct timespec)
-    tm_buf      times 64 db 0      ; struct tm (libc)
+    ts_fmt      db "%H:%M:%S ", 0          ; trailing space included
+    timespec    dq 0, 0                    ; tv_sec, tv_nsec (struct timespec)
 
+    rs_fmt      db "%d/%b/%Y:%H:%M:%S %z", 0
+
+    log_space                      db " ", 0
+    log_space_len                  equ $ - log_space - 1
 
     ; log level prefixes
 
@@ -74,6 +76,21 @@ section .data
     log_thing                       db " - ", 0
     log_thing_len                   equ $ - log_thing - 1
 
+    ; common log format extended
+    clfe_missing                    db "-", 0
+    clfe_missing_len                equ $ - clfe_missing - 1
+
+    clfe_start_ts                   db "[", 0
+    clfe_start_ts_len               equ $ - clfe_start_ts - 1
+
+    clfe_end_ts                     db "]", 0
+    clfe_end_ts_len                 equ $ - clfe_end_ts - 1
+
+    clfe_qm                         db 0x22, 0  ; '"'
+    clfe_qm_len                     equ $ - clfe_qm - 1
+
+    clfe_nobytes                    db "0", 0
+    clfe_nobytes_len                equ $ - clfe_nobytes - 1
 
     ; HTTP status messages
     log_status_200                  db "200 OK", 0xa, 0
@@ -124,7 +141,12 @@ section .data
     log_version_len                 equ $ - log_version - 1
 
 
-; macros
+section .bss
+    tm_buf     resb 64  ; struct tm (libc)
+    ts_buf     resb 16  ; "HH:MM:SS \0" + padding
+    rs_buf     resb 32  ; "dd/mmm/yyyy:HH:MM:SS +-zzzz \0" + padding
+
+    status_buf resb 20  ; current ITOA scratch-buffer requirement
 
 ; PRINT_TIMESTAMP
 ;   Prints "HH:MM:SS " to stdout via clock_gettime + localtime_r + strftime.
@@ -195,75 +217,171 @@ section .data
     PRINTN %1, %2
 %endmacro
 
-; LOG_REQUEST path, status_code, ip_ptr
-;   Prints: "HH:MM:SS [INFO] Request: <ip> - <path> -> <status>\n"
-;   Args:
-;     %1: pointer to null-terminated path string
-;     %2: status code as integer (200, 400, 403, 404, or 405)
-;     %3: pointer to null-terminated ip string
-;   Clobbers: rax, rdi, rsi, rdx, rcx
-%macro LOG_REQUEST 3
-    PRINT_TIMESTAMP
+; LOG_REQUEST_CLFE
+;   Prints a Combined Log Format Extended (CLFE) log line to stdout.
+;   Also matches the default Apache HTTP Server log format.
+;   Format: <ip> <ident> <auth> [<timestamp>] "<request>" <status> <size> "<referer>" "<user-agent>"
+;   
+;   Reads from:
+;     client_ip_str    null-terminated client IP string
+;     username         null-terminated auth username (or empty for "-")
+;     request          raw HTTP request buffer (up to 8192 bytes, CR/LF terminated)
+;     last_status      word containing the HTTP status code
+;     content_length_b null-terminated response size string (or empty for "0")
+;     referer          null-terminated Referer header value (or empty for "-")
+;     user_agent       null-terminated User-Agent header value (or empty for "-")
+;   Clobbers: rax, rcx, rdi, rsi, rdx, r9, r10
+%macro LOG_REQUEST_CLFE 0
 
-    PRINT log_prefix_info, log_prefix_info_len
-    PRINT log_request_pre, log_request_pre_len
+%%pt1:
+    ; pt. 1: ip
+    lea r10, [client_ip_str]
+    STRLEN r10, rcx
+    PRINT r10, rcx
+    PRINT log_space, log_space_len
 
-    STRLEN %3, rcx
-    PRINT %3, rcx
+%%pt2:
+    ; pt. 2: identity, not supported
+    PRINT clfe_missing, clfe_missing_len
+    PRINT log_space, log_space_len
 
-    PRINT log_thing, log_thing_len
+%%pt3:
+    ; pt. 3: auth
+    lea r10, [username]
+    STRLEN r10, rcx
 
-    STRLEN %1, rcx
+    cmp rcx, 0                       ; if empty, no auth
+    je %%no_auth
 
-    PRINT %1, rcx
-    PRINT log_arrow, log_arrow_len
+    PRINT r10, rcx
+    PRINT log_space, log_space_len
+    
+    jmp %%pt4
 
-    cmp %2, 405
-    je %%s405
+%%no_auth:
+    PRINT clfe_missing, clfe_missing_len
+    PRINT log_space, log_space_len
 
-    cmp %2, 404
-    je %%s404
+%%pt4:
+    ; pt. 4: timestamp
+    PRINT clfe_start_ts, clfe_start_ts_len
 
-    cmp %2, 403
-    je %%s403
+    ; get the current wall-clock time
+    ; clock_gettime(clockid, timespec)
+    mov rax, 228
+    xor rdi, rdi       ; CLOCK_REALTIME
+    mov rsi, timespec
+    syscall
 
-    cmp %2, 401
-    je %%s401
+    ; localtime_r(&tv_sec, &tm_buf)
+    mov rdi, timespec
+    mov rsi, tm_buf
+    call localtime_r
 
-    cmp %2, 400
-    je %%s400
+    ; strftime(rs_buf, 32, rs_fmt, &tm_buf)
+    mov rdi, rs_buf    ; fixed: write directly to rs_buf
+    mov rsi, 32        ; fixed: size matches rs_buf
+    mov rdx, rs_fmt
+    mov rcx, tm_buf    ; fixed: pass struct tm*, not rs_buf
+    call strftime
 
-    cmp %2, 304
-    je %%s304
+    STRLEN rs_buf, rcx
+    PRINT rs_buf, rcx
 
-    jmp %%s200
+    PRINT clfe_end_ts, clfe_end_ts_len
+    PRINT log_space, log_space_len
 
-%%s405:
-    PRINT log_status_405, log_status_405_len
+%%pt5:
+    PRINT clfe_qm, clfe_qm_len
+
+    lea r10, [request]
+    xor r9, r9
+
+%%req_scan:
+    cmp r9, 8192
+    jge %%req_print
+
+    movzx rax, byte [r10 + r9]
+    cmp al, 0x0d
+
+    je %%req_print
+    cmp al, 0
+
+    je %%req_print
+
+    inc r9
+    jmp %%req_scan
+
+%%req_print:
+    PRINT r10, r9
+
+    PRINT clfe_qm, clfe_qm_len
+    PRINT log_space, log_space_len
+
+%%pt6:
+    ; pt. 6: status code
+
+    movzx r10, word [last_status]
+
+    ITOA r10, status_buf, r9
+    PRINT status_buf, r9
+
+    PRINT log_space, log_space_len
+    
+%%pt7:
+    ; pt. 7: size
+    STRLEN content_length_b, rcx
+
+    cmp rcx, 0
+    je %%no_len
+
+    PRINT content_length_b, rcx
+    PRINT log_space, log_space_len
+
+    jmp %%pt8
+
+%%no_len:
+    PRINT clfe_nobytes, clfe_nobytes_len
+    PRINT log_space, log_space_len
+
+%%pt8:
+    ; pt. 8: "referer"
+    PRINT clfe_qm, clfe_qm_len
+
+    STRLEN referer, rcx
+
+    cmp rcx, 0
+    je %%no_referer
+
+    PRINT referer, rcx
+    PRINT clfe_qm, clfe_qm_len
+    PRINT log_space, log_space_len
+
+    jmp %%pt9
+
+%%no_referer:
+    PRINT clfe_missing, clfe_missing_len
+    PRINT clfe_qm, clfe_qm_len
+    PRINT log_space, log_space_len
+
+%%pt9:
+    ; pt. 9: user agent
+    PRINT clfe_qm, clfe_qm_len
+
+    STRLEN user_agent, rcx
+
+    cmp rcx, 0
+    je %%no_ua
+
+    PRINT user_agent, rcx
+    PRINT clfe_qm, clfe_qm_len
+
     jmp %%done
 
-%%s404:
-    PRINT log_status_404, log_status_404_len
-    jmp %%done
-
-%%s403:
-    PRINT log_status_403, log_status_403_len
-    jmp %%done
-
-%%s401:
-    PRINT log_status_401, log_status_401_len
-    jmp %%done
-
-%%s400:
-    PRINT log_status_400, log_status_400_len
-    jmp %%done
-
-%%s304:
-    PRINT log_status_304, log_status_304_len
-    jmp %%done
-
-%%s200:
-    PRINT log_status_200, log_status_200_len
+%%no_ua:
+    PRINT clfe_missing, clfe_missing_len
+    PRINT clfe_qm, clfe_qm_len
 
 %%done:
+    LF
 %endmacro

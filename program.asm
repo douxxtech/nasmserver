@@ -73,6 +73,10 @@ section .bss
     username          resb 129
     password          resb 129
 
+    ; client http headers
+    user_agent        resb 1025 ; 1024 + "\0"
+    referer           resb 1025
+
     ; misc
     last_status       resw 1     ; for logs
     content_length_b  resb 20
@@ -249,8 +253,6 @@ _start:
     READ_FILE r14, request, 8192
 
     IS_HTTP_REQUEST request, 8192
-
-
 
     cmp rax, -405
     je .method_not_allowed
@@ -489,6 +491,9 @@ _start:
     jmp .send
 
 .unauthorized:
+    mov al, [empty]
+    mov [username], al        ; clear the username field to not send a wrong username in logs
+
     lea r13, [response]
     lea r12, [response]
     mov qword [file_to_serve], errordoc_401_path
@@ -498,7 +503,7 @@ _start:
 
     sub r12, r13
 
-    mov word [last_status], 401
+    mov word [last_status], 401  ;
     jmp .send
 
 .bad_request:
@@ -732,6 +737,12 @@ _start:
     mov rsi, 1      ; SHUT_WR
     syscall
 
+        ; parse UA and referer for the logs
+    PARSE_UA_HEADER      request, 8192, user_agent, 1024
+    PARSE_REFERER_HEADER request, 8192, referer,    1024
+
+    LOG_REQUEST_CLFE
+
     ; drain remaining input so TCP can close cleanly
 .__drain:
 
@@ -750,9 +761,7 @@ _start:
     mov rdi, r14
     syscall
 
-    movzx r12, word [last_status]  ; reuse r12/r13 for log, replaced next iteration
-    lea r13, [client_ip_str]
-    LOG_REQUEST path, r12, r13
+
 
     add rsp, 16
     EXIT 0 ; child exits
