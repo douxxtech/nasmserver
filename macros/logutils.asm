@@ -66,7 +66,7 @@ section .data
     log_listening_port_len          equ $ - log_listening_port - 1
 
 
-    ; request logging (common log format extended)
+    ; request logging
     log_request_pre                 db "Request: ", 0
     log_request_pre_len             equ $ - log_request_pre - 1
 
@@ -76,6 +76,7 @@ section .data
     log_thing                       db " - ", 0
     log_thing_len                   equ $ - log_thing - 1
 
+    ; common log format extended
     clfe_missing                    db "-", 0
     clfe_missing_len                equ $ - clfe_missing - 1
 
@@ -218,6 +219,8 @@ section .bss
 
 ; LOG_REQUEST path, status_code, ip_ptr
 ;   Prints: "HH:MM:SS [INFO] Request: <ip> - <path> -> <status>\n"
+;   Not used anymore!!
+;
 ;   Args:
 ;     %1: pointer to null-terminated path string
 ;     %2: status code as integer (200, 400, 403, 404, or 405)
@@ -289,7 +292,22 @@ section .bss
 %%done:
 %endmacro
 
-%macro LOG_REQUEST2 0
+
+; LOG_REQUEST_CLFE
+;   Prints a Combined Log Format Extended (CLFE) log line to stdout.
+;   Also matches the default Apache HTTP Server log format.
+;   Format: <ip> <ident> <auth> [<timestamp>] "<request>" <status> <size> "<referer>" "<user-agent>"
+;   
+;   Reads from:
+;     client_ip_str    null-terminated client IP string
+;     username         null-terminated auth username (or empty for "-")
+;     request          raw HTTP request buffer (up to 8192 bytes, CR/LF terminated)
+;     last_status      word containing the HTTP status code
+;     content_length_b null-terminated response size string (or empty for "0")
+;     referer          null-terminated Referer header value (or empty for "-")
+;     user_agent       null-terminated User-Agent header value (or empty for "-")
+;   Clobbers: rax, rcx, rdi, rsi, rdx, r9, r10
+%macro LOG_REQUEST_CLFE 0
 
 %%pt1:
     ; pt. 1: ip

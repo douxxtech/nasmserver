@@ -738,7 +738,7 @@ _start:
     PARSE_UA_HEADER      request, 8192, user_agent, 1024
     PARSE_REFERER_HEADER request, 8192, referer,    1024
 
-    LOG_REQUEST2
+    LOG_REQUEST_CLFE
 
     ; drain remaining input so TCP can close cleanly
 .__drain:
