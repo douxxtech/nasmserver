@@ -22,7 +22,7 @@ I started learning NASM on a Monday afternoon, because I was bored in my NoSQL c
 - Concurrent request handling via `fork()`
 - Configurable `Server:` header
 - Per-request logging with timestamps and client IPs
-- Apache-HTTP-Server-like [Common Log Format](https://en.wikipedia.org/wiki/Common_Log_Format) logging
+- Apache-HTTP-Server-like [combined-format](https://en.wikipedia.org/wiki/Common_Log_Format) logging
 
 ## What it does NOT support
 
