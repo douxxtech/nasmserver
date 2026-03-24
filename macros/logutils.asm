@@ -146,7 +146,7 @@ section .bss
     ts_buf     resb 16  ; "HH:MM:SS \0" + padding
     rs_buf     resb 32  ; "dd/mmm/yyyy:HH:MM:SS +-zzzz \0" + padding
 
-    status_buf resb 3
+    status_buf resb 20  ; current ITOA scratch-buffer requirement
 
 ; PRINT_TIMESTAMP
 ;   Prints "HH:MM:SS " to stdout via clock_gettime + localtime_r + strftime.
