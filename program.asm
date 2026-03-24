@@ -491,6 +491,9 @@ _start:
     jmp .send
 
 .unauthorized:
+    mov al, [empty]
+    mov [username], al        ; clear the username field to not send a wrong username in logs
+
     lea r13, [response]
     lea r12, [response]
     mov qword [file_to_serve], errordoc_401_path
@@ -500,7 +503,7 @@ _start:
 
     sub r12, r13
 
-    mov word [last_status], 401
+    mov word [last_status], 401  ;
     jmp .send
 
 .bad_request:
