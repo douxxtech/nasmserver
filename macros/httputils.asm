@@ -537,6 +537,90 @@ section .bss
 %%done:
 %endmacro
 
+; PARSE_XRI_HEADER buffer, length, out_buf, max_len
+;   Scans headers for "X-Real-IP: " and copies the value into out_buf.
+;   Args:
+;     %1: buffer address
+;     %2: buffer length
+;     %3: output buffer, zeroed on failure
+;     %4: max bytes to copy (should be resb size - 1)
+;   Clobbers: rax, rsi, rdi, r8, r9
+%macro PARSE_XRI_HEADER 4
+    mov rsi, %1
+    xor r8, r8
+
+%%xri_scan:
+    mov rax, r8
+    add rax, 12               ; "X-REal-Ip: " = 11 bytes + 1 byte value
+
+    cmp rax, %2
+    jg %%xri_not_found
+
+    cmp byte [rsi + r8], 'X'
+    jne %%xri_next
+
+    ; Ensure we are at the start of a line
+    cmp r8, 2
+    jl %%xri_next
+    cmp word [rsi + r8 - 2], 0x0a0d
+    jne %%xri_next
+
+    ; "X-Re" = 0x65522d58
+    ; "al-I" = 0x492d6c61
+    ; "p: "  = 0x203a50
+    cmp dword [rsi + r8 + 0], 0x65522d58
+    jne %%xri_next
+    cmp dword [rsi + r8 + 4], 0x492d6c61
+    jne %%xri_next
+    cmp word  [rsi + r8 + 8], 0x3a70      ; "p:"
+    jne %%xri_next
+    cmp byte  [rsi + r8 + 10], 0x20       ; " "
+    jne %%xri_next
+
+    add r8, 11                            ; skip past "X-Real-IP: "
+    xor r9, r9
+    lea rdi, [%3]
+
+%%xri_copy:
+    mov rax, r8
+    add rax, r9
+
+    cmp rax, %2
+    jge %%xri_done
+
+    movzx rax, byte [rsi + rax]
+
+    cmp al, 0x0d                 ; \r = end of header value
+    je %%xri_done
+
+    cmp al, 0x0a                 ; \n = also end
+    je %%xri_done
+
+    cmp al, 0x20                 ; stop at space or control chars
+    jl %%xri_done
+
+    mov [rdi + r9], al
+    inc r9
+
+    cmp r9, %4
+    jge %%xri_done
+
+    jmp %%xri_copy
+
+%%xri_done:
+    mov byte [rdi + r9], 0
+    jmp %%done
+
+%%xri_next:
+    inc r8
+    jmp %%xri_scan
+
+%%xri_not_found:
+    mov byte [%3], 0
+
+%%done:
+%endmacro
+
 ; HTTP_EXPIRE_DATE offset_sec, out_buf
 ;   Builds a null-terminated RFC 7231 GMT date string for use in HTTP headers.
 ;   Takes the current wall-clock time, adds offset_sec seconds, then formats it.
