@@ -3,6 +3,7 @@
 set -e
 
 INSTALL_DIR="/opt/nasmserver"
+LOG_DIR="/var/log/nasmserver"
 WWW_DIR="/var/www/nasmserver"
 
 # create install dir and copy files
@@ -12,12 +13,16 @@ cp -f ./nasmserver "$INSTALL_DIR/nasmserver"
 cp -f ./nasmserver-bin "$INSTALL_DIR/nasmserver-bin"
 cp -rf ./libs/ "$INSTALL_DIR/libs"
 
+# create the log dir
+mkdir -p "$LOG_DIR"
+
 # config.cfg, don't override
 if [ ! -f "$INSTALL_DIR/config.cfg" ]; then
-    # change the www root
-    sed 's|DOCUMENT_ROOT=./www|DOCUMENT_ROOT=/var/www/nasmserver|' ./env.example > "$INSTALL_DIR/config.cfg"
-    echo "Created $INSTALL_DIR/config.cfg"
+    sed -e 's|DOCUMENT_ROOT=./www|DOCUMENT_ROOT=/var/www/nasmserver|' \
+        -e "s|#LOG_FILE=<path>|LOG_FILE=$LOG_DIR/request.log|" \
+        ./env.example > "$INSTALL_DIR/config.cfg"
     
+    echo "Created $INSTALL_DIR/config.cfg"
 else
     echo "Skipping config.cfg (already exists)"
 fi
@@ -34,5 +39,5 @@ cp -rn ./www/* "$WWW_DIR/"
 # make a symbolic link to /usr/local/bin
 ln -sf /opt/nasmserver/nasmserver /usr/local/bin/nasmserver
 
-echo "Done. Installed to $INSTALL_DIR, web root at $WWW_DIR, config file at $INSTALL_DIR/config.cfg"
+echo "Done. Installed to $INSTALL_DIR, web root at $WWW_DIR, log file at $LOG_DIR/request.log and config file at $INSTALL_DIR/config.cfg"
 echo "Run with: nasmserver"
