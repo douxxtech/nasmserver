@@ -14,12 +14,25 @@
 # - Release description: detailed information about the release
 # - =--- END ---=: marks the end of the release 
 
+=--- v1.9 ---=
+### What changed
+- Added persistent request logging to file in Apache HTTP Server combined log format (CLFE), including client IP, timestamp, request line, status code, response size, referer, and user-agent.
+- Added `LOG_FILE` config option to specify a custom log file path (default: logs to STDOUT).
+- The install script now creates `/var/log/nasmserver`.
+- Requests now parse and log `User-Agent` and `Referer` headers for richer analytics.
+- If the log file cannot be opened, a warning is logged and STDOUT is used as a fallback.
+
+New log format:
+```
+127.0.0.1 - - [25/Mar/2026:16:47:06 +0100] "GET / HTTP/1.0" 200 3501 "-" "NASM-Client/1.0"
+```
+=--- END ---=
+
 =--- v1.8 ---=
 ### What changed
 - Added `If-Modified-Since` support: conditional GET requests now return `304 Not Modified` when appropriate.
 - CI/CD now tracks binary size and syscall stats for releases (see below).
 =--- END ---=
-
 
 =--- v1.7 ---=
 ### What changed
