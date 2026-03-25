@@ -45,6 +45,8 @@ section .data
     log_check_port_privileged       db "Warning: port < 1024 requires root privileges", 0
     log_check_port_privileged_len   equ $ - log_check_port_privileged - 1
 
+    log_log_file_not_opened         db "Failed to open the provided log file (missing permissions?). STDOUT will be used instead.", 0
+    log_log_file_not_opened_len     equ $ - log_log_file_not_opened - 1
 
     ; startup / fatal errors
     log_fail_read_env               db "Failed to read the provided configuration file path", 0

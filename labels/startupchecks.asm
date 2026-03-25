@@ -97,6 +97,16 @@ startup_checks:
 
     LOG_WARNING log_check_port_privileged, log_check_port_privileged_len
 
+.check_logfile:
+    cmp byte [log_file_path], 0
+    je .checks_done         ; no file path provided, just skep
+
+    cmp qword [log_file], 1
+    jne .checks_done        ; if != 1, its ok
+
+    ; if its 1, it means that we failed to open the file
+    LOG_WARNING log_log_file_not_opened, log_log_file_not_opened_len 
+
 .checks_done:
     LOG_INFO log_startup_ok, log_startup_ok_len
 
