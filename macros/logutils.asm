@@ -302,11 +302,14 @@ section .bss
     jge %%req_print
 
     movzx rax, byte [r10 + r9]
-    cmp al, 0x0d
-
+    
+    cmp al, 0x0d                ; \r
     je %%req_print
-    cmp al, 0
+    
+    cmp al, 0xa                 ; \n
+    je %%req_print
 
+    cmp al, 0                   ; \0
     je %%req_print
 
     inc r9
