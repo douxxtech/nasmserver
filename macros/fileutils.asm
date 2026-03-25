@@ -187,3 +187,20 @@ section .bss
     mov rdx, 0
     syscall
 %endmacro
+
+; OPEN_FILE_A path
+;   Opens a file for appending (creates it if it doesn't exist).
+;   Args:
+;     %1: null-terminated path
+;   Returns:
+;     rax = file descriptor, or negative errno on error
+;   Clobbers: rax, rdi, rsi, rdx
+%macro OPEN_FILE_A 1
+
+    ; open(path, flags, mode)
+    mov rax, 2      ; sys_open
+    mov rdi, %1
+    mov rsi, 0x441  ; O_WRONLY | O_CREAT | O_APPEND
+    mov rdx, 0644o
+    syscall
+%endmacro
