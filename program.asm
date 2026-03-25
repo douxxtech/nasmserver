@@ -708,7 +708,7 @@ _start:
 
     ; open the file
     mov rdi, r10
-    OPEN_FILE rdi
+    OPEN_FILE_R rdi
 
     cmp rax, 0
     jl .end                    ; shouldn't happen cuz FILE_EXISTS passed, but just in case
@@ -737,19 +737,13 @@ _start:
     mov rsi, 1      ; SHUT_WR
     syscall
 
-        ; parse UA and referer for the logs
-    PARSE_UA_HEADER      request, 8192, user_agent, 1024
-    PARSE_REFERER_HEADER request, 8192, referer,    1024
-
-    LOG_REQUEST_CLFE
-
     ; drain remaining input so TCP can close cleanly
 .__drain:
 
     ; read(fd, buffer, count)
     mov rax, 0
     mov rdi, r14
-    lea rsi, [request]
+    lea rsi, [response]            ; we don't use response anymore, empty it in there
     mov rdx, 16
     syscall
 
@@ -761,7 +755,11 @@ _start:
     mov rdi, r14
     syscall
 
+    ; parse UA and referer for the logs
+    PARSE_UA_HEADER      request, 8192, user_agent, 1024
+    PARSE_REFERER_HEADER request, 8192, referer,    1024
 
+    LOG_REQUEST_CLFE
 
     add rsp, 16
     EXIT 0 ; child exits

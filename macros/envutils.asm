@@ -15,7 +15,7 @@ section .bss
 ;   Clobbers: rax, rbx, rcx, rdx, rdi, rsi, r8, r9
 %macro GET_ENV_VALUE 4
 
-    OPEN_FILE %1
+    OPEN_FILE_R %1
     cmp rax, 0
     jl %%fail
 

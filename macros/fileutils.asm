@@ -171,14 +171,14 @@ section .bss
     syscall
 %endmacro
 
-; OPEN_FILE path
+; OPEN_FILE_R path
 ;   Opens a file for reading.
 ;   Args:
 ;     %1: null-terminated path
 ;   Returns:
 ;     rax = file descriptor, or negative errno on error
 ;   Clobbers: rax, rdi, rsi, rdx
-%macro OPEN_FILE 1
+%macro OPEN_FILE_R 1
 
     ; open(path, flags, mode)
     mov rax, 2   ; sys_open
