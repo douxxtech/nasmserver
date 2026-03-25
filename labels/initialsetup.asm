@@ -80,6 +80,7 @@ section .bss
     errordoc_400_path  resb 257
 
     log_file_path      resb 129
+    log_file           resq 1    ; log file descriptor
 
 section .text
     global initial_setup
@@ -143,7 +144,6 @@ initial_setup:
     ENV_DEFAULT env_path_buf, key_name,         server_name,    129,  server_w_ver
     ENV_DEFAULT env_path_buf, key_authuser,     auth_username,  129,  default_authuser
     ENV_DEFAULT env_path_buf, key_authpass,     auth_password,  129,  default_authpass
-    ENV_DEFAULT env_path_buf, key_logfile,      log_file_path,  129,   default_logfile
 
     ENV_DEFAULT env_path_buf, key_errordoc_405, errordoc_405,   129,  default_errordoc_405
     ENV_DEFAULT env_path_buf, key_errordoc_404, errordoc_404,   129,  default_errordoc_404
@@ -167,6 +167,9 @@ initial_setup:
     ENV_DEFAULT env_path_buf, key_servedots, serve_dots_str, 5, default_servedots
     call .is_servedot_true
     
+    ; open the log file
+    ENV_DEFAULT env_path_buf, key_logfile, log_file_path, 129, default_logfile
+    call .open_logfile
 
     ; build sockaddr from the now-loaded port/interface
     movzx eax, word [port]
@@ -199,6 +202,23 @@ initial_setup:
 
 .set_servedot_true:
     mov byte [serve_dots], 1
+    ret
+
+.open_logfile:
+    cmp byte [log_file_path], 0
+    je .no_log_file
+
+    OPEN_FILE_A log_file_path
+
+    cmp rax, 0
+    jl .no_log_file              ; failed to open / create it
+
+    mov qword [log_file], rax
+
+    ret
+
+.no_log_file:
+    mov qword [log_file], 1  ; no log file = stdout
     ret
 
 .failed_read_file:
