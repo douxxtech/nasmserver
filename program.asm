@@ -755,12 +755,7 @@ _start:
     mov rdi, r14
     syscall
 
-    ; parse UA and referer for the logs
-    PARSE_UA_HEADER      request, 8192, user_agent, 1024
-    PARSE_REFERER_HEADER request, 8192, referer,    1024
-
-    mov r8, qword [log_file]
-    LOG_REQUEST_CLFE r8
+    call .log_request
 
     add rsp, 16
     EXIT 0 ; child exits
@@ -799,6 +794,21 @@ _start:
 .reap_done:
     ret
 
+.log_request:
+    ; parse other headers for the logs
+    PARSE_UA_HEADER      request, 8192, user_agent, 1024
+    PARSE_REFERER_HEADER request, 8192, referer,    1024
+
+    cmp byte [use_xri], 1
+    jne .__log_req            ; check if we need to use the X-Real-Ip header
+
+    PARSE_XRI_HEADER request, 8192, client_ip_str, 15
+
+.__log_req:
+    mov r8, qword [log_file]
+    LOG_REQUEST_CLFE r8
+
+    ret
 
 .fail_socket:
     LOG_ERR log_fail_socket, log_fail_socket_len
