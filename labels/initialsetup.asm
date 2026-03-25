@@ -223,7 +223,7 @@ initial_setup:
 
 .is_xri_true:
     cmp dword [use_xri_str], 0x65757274  ; "true"
-    je .set_servedot_true
+    je .set_xri_true
 
     ret
 
