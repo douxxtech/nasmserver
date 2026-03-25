@@ -16,6 +16,7 @@ cp -rf ./libs/ "$INSTALL_DIR/libs"
 
 # create the log dir
 mkdir -p "$LOG_DIR"
+chmod 777 "$LOG_DIR"
 
 # config.cfg, don't override
 if [ ! -f "$INSTALL_DIR/config.cfg" ]; then
