@@ -269,6 +269,8 @@ section .bss
     ; pt. 4: timestamp
     PRINTF %1, clfe_start_ts, clfe_start_ts_len
 
+    push %1            ;  save %1 (r9) so it doesn't get clobbered
+
     ; get the current wall-clock time
     ; clock_gettime(clockid, timespec)
     mov rax, 228
@@ -287,6 +289,8 @@ section .bss
     mov rdx, rs_fmt
     mov rcx, tm_buf    ; fixed: pass struct tm*, not rs_buf
     call strftime
+
+    pop %1
 
     STRLEN rs_buf, rcx
     PRINTF %1, rs_buf, rcx
