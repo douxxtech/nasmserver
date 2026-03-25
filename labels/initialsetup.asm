@@ -29,6 +29,9 @@ section .data
     key_maxage            db "MAX_AGE", 0
     default_maxage        db "600", 0
 
+    key_logfile           db "LOG_FILE", 0
+    default_logfile       db "", 0
+
     ; errordocs files, relatively to the document_root (empty = none)
     ; start them with a slash !
 
@@ -75,6 +78,8 @@ section .bss
     errordoc_403_path  resb 257
     errordoc_401_path  resb 257
     errordoc_400_path  resb 257
+
+    log_file_path      resb 129
 
 section .text
     global initial_setup
@@ -138,6 +143,7 @@ initial_setup:
     ENV_DEFAULT env_path_buf, key_name,         server_name,    129,  server_w_ver
     ENV_DEFAULT env_path_buf, key_authuser,     auth_username,  129,  default_authuser
     ENV_DEFAULT env_path_buf, key_authpass,     auth_password,  129,  default_authpass
+    ENV_DEFAULT env_path_buf, key_logfile,      log_file_path,  129,   default_logfile
 
     ENV_DEFAULT env_path_buf, key_errordoc_405, errordoc_405,   129,  default_errordoc_405
     ENV_DEFAULT env_path_buf, key_errordoc_404, errordoc_404,   129,  default_errordoc_404
