@@ -51,42 +51,50 @@ section .data
     default_errordoc_400  db "", 0
 
 section .bss
-    ; config (loaded from .env at startup)
-    ; all custom paths are 128 chars max for consistency (129 for the null byte)
+    ; env / strings
+    env_path_buf       resb 129  ; Path to .env file
+    word_str_buf       resb 8    ; Temp buffer for ASCII to Integer conversion
+    max_age_str        resb 12   ; Buffer for "4294967295\0"
+    serve_dots_str     resb 5    ; Buffer for "true\0"
+    use_xri_str        resb 5    ; Buffer for "true\0"
 
-    env_path_buf       resb 129
-    word_str_buf       resb 8    ; ascii port/max requests from .env before ATOI
-    port               resw 1    ; port number (host byte order)
-    interface          resd 1    ; 0 = 0.0.0.0
-    max_age_str        resb 12   ; enough for "4294967295\0" (max value of resd 1)
-    max_age            resd 1
-    max_requests       resw 1    ; max simultaneous connections (max 65535)
-    document_root      resb 129  ; document root, no trailing slash !
-    index_file         resb 129  ; default index file
-    server_w_ver       resb 24   ; The default server with the version (24 chars should be enough)
+    ; network
+    interface          resd 1    ; IP Address (0 = 0.0.0.0)
+    port               resw 1    ; Port number (host byte order)
+    max_requests       resw 1    ; Max simultaneous connections (0-65535)
+    max_age            resd 1    ; Cache-Control Max-Age value
+    use_xri            resb 1    ; Toggle for X-Real-IP
+
+    ; server
     server_name        resb 129  ; Server: header value
-    auth_username      resb 129  ; for HTTP 1.0 authentication
-    auth_password      resb 129
-    serve_dots_str     resb 5    ; "true\0"
-    serve_dots         resb 1
-    errordoc_405       resb 129  ; relative to document_root, start with /
-    errordoc_404       resb 129
-    errordoc_403       resb 129
+    server_w_ver       resb 24   ; "ServerName/1.0" combined string
+
+    ; serve configs
+    document_root      resb 129  ; Root directory (no trailing slash)
+    index_file         resb 129  ; Default index (e.g., index.html)
+    serve_dots         resb 1    ; Toggle serving hidden files
+
+    ; auth
+    auth_username      resb 129  ; HTTP 1.0 Basic Auth User
+    auth_password      resb 129  ; HTTP 1.0 Basic Auth Pass
+
+    ; logs
+    log_file_path      resb 129  ; Path to access/error log
+    log_file           resq 1    ; Log file descriptor (64-bit)
+
+    ; errordocs
     errordoc_400       resb 129
     errordoc_401       resb 129
+    errordoc_403       resb 129
+    errordoc_404       resb 129
+    errordoc_405       resb 129
 
-    ; error doc paths (built at startup from document_root + errordoc_* + NUL)
-    errordoc_405_path  resb 257
-    errordoc_404_path  resb 257
-    errordoc_403_path  resb 257
-    errordoc_401_path  resb 257
+    ; document_root + errordoc_XXX + NULL = 257 bytes
     errordoc_400_path  resb 257
-
-    log_file_path      resb 129
-    log_file           resq 1    ; log file descriptor
-
-    use_xri_str        resb 5
-    use_xri            resb 1
+    errordoc_401_path  resb 257
+    errordoc_403_path  resb 257
+    errordoc_404_path  resb 257
+    errordoc_405_path  resb 257
 
 section .text
     global initial_setup
