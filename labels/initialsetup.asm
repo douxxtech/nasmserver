@@ -32,6 +32,9 @@ section .data
     key_logfile           db "LOG_FILE", 0
     default_logfile       db "", 0
 
+    key_use_xri           db "USE_X_REAL_IP", 0   ; if we should use 'X-Real-Ip' to display the IP address in the logs
+    default_use_xri       db "false", 0
+
     ; errordocs files, relatively to the document_root (empty = none)
     ; start them with a slash !
 
@@ -81,6 +84,9 @@ section .bss
 
     log_file_path      resb 129
     log_file           resq 1    ; log file descriptor
+
+    use_xri_str        resb 5
+    use_xri            resb 1
 
 section .text
     global initial_setup
@@ -166,6 +172,9 @@ initial_setup:
 
     ENV_DEFAULT env_path_buf, key_servedots, serve_dots_str, 5, default_servedots
     call .is_servedot_true
+
+    ENV_DEFAULT env_path_buf, key_use_xri, use_xri_str, 5, default_use_xri
+    call .is_xri_true
     
     ; open the log file
     ENV_DEFAULT env_path_buf, key_logfile, log_file_path, 129, default_logfile
@@ -202,6 +211,16 @@ initial_setup:
 
 .set_servedot_true:
     mov byte [serve_dots], 1
+    ret
+
+.is_xri_true:
+    cmp dword [use_xri_str], 0x65757274  ; "true"
+    je .set_servedot_true
+
+    ret
+
+.set_xri_true:
+    mov byte [use_xri], 1
     ret
 
 .open_logfile:
