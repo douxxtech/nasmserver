@@ -759,8 +759,8 @@ _start:
     PARSE_UA_HEADER      request, 8192, user_agent, 1024
     PARSE_REFERER_HEADER request, 8192, referer,    1024
 
-    mov r9, qword [log_file]
-    LOG_REQUEST_CLFE r9
+    mov r8, qword [log_file]
+    LOG_REQUEST_CLFE r8
 
     add rsp, 16
     EXIT 0 ; child exits
