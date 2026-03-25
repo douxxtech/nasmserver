@@ -93,7 +93,7 @@ startup_checks:
 .check_port:
     movzx rax, word [port]
     cmp rax, 1024
-    jge .checks_done
+    jge .check_logfile
 
     LOG_WARNING log_check_port_privileged, log_check_port_privileged_len
 
