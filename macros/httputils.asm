@@ -332,6 +332,12 @@ section .bss
     cmp al, 0x0d                 ; \r = end of header value
     je %%ims_done
 
+    cmp al, 0x0a                 ; \n = also end
+    je %%ims_done
+
+    cmp al, 0x20                 ; any control char below space = end
+    jl %%ims_done
+
     mov [rdi + r9], al
     inc r9
 
@@ -407,8 +413,14 @@ section .bss
 
     movzx rax, byte [rsi + rax]
 
-    cmp al, 0x0d              ; \r = end of header value
+    cmp al, 0x0d                 ; \r = end of header value
     je %%ua_done
+
+    cmp al, 0x0a                 ; \n = also end
+    je %%ua_done
+
+    cmp al, 0x20                 ; any control char below space = end
+    jl %%ua_done
 
     mov [rdi + r9], al
     inc r9
@@ -490,8 +502,14 @@ section .bss
 
     movzx rax, byte [rsi + rax]
 
-    cmp al, 0x0d              ; \r = end of header value
+    cmp al, 0x0d                 ; \r = end of header value
     je %%ref_done
+
+    cmp al, 0x0a                 ; \n = also end
+    je %%ref_done
+
+    cmp al, 0x20                 ; any control char below space = end
+    jl %%ref_done
 
     mov [rdi + r9], al
     inc r9

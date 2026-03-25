@@ -45,6 +45,8 @@ section .data
     log_check_port_privileged       db "Warning: port < 1024 requires root privileges", 0
     log_check_port_privileged_len   equ $ - log_check_port_privileged - 1
 
+    log_log_file_not_opened         db "Failed to open the provided log file (missing permissions?). STDOUT will be used instead.", 0
+    log_log_file_not_opened_len     equ $ - log_log_file_not_opened - 1
 
     ; startup / fatal errors
     log_fail_read_env               db "Failed to read the provided configuration file path", 0
@@ -221,7 +223,8 @@ section .bss
 ;   Prints a Combined Log Format Extended (CLFE) log line to stdout.
 ;   Also matches the default Apache HTTP Server log format.
 ;   Format: <ip> <ident> <auth> [<timestamp>] "<request>" <status> <size> "<referer>" "<user-agent>"
-;   
+;   Args:
+;     %1: file descriptor
 ;   Reads from:
 ;     client_ip_str    null-terminated client IP string
 ;     username         null-terminated auth username (or empty for "-")
@@ -231,40 +234,42 @@ section .bss
 ;     referer          null-terminated Referer header value (or empty for "-")
 ;     user_agent       null-terminated User-Agent header value (or empty for "-")
 ;   Clobbers: rax, rcx, rdi, rsi, rdx, r9, r10
-%macro LOG_REQUEST_CLFE 0
+%macro LOG_REQUEST_CLFE 1
 
 %%pt1:
     ; pt. 1: ip
     lea r10, [client_ip_str]
     STRLEN r10, rcx
-    PRINT r10, rcx
-    PRINT log_space, log_space_len
+    PRINTF %1, r10, rcx
+    PRINTF %1, log_space, log_space_len
 
 %%pt2:
     ; pt. 2: identity, not supported
-    PRINT clfe_missing, clfe_missing_len
-    PRINT log_space, log_space_len
+    PRINTF %1, clfe_missing, clfe_missing_len
+    PRINTF %1, log_space, log_space_len
 
 %%pt3:
     ; pt. 3: auth
     lea r10, [username]
     STRLEN r10, rcx
 
-    cmp rcx, 0                       ; if empty, no auth
+    cmp rcx, 0                            ; if empty, no auth
     je %%no_auth
 
-    PRINT r10, rcx
-    PRINT log_space, log_space_len
-    
+    PRINTF %1, r10, rcx
+    PRINTF %1, log_space, log_space_len
+
     jmp %%pt4
 
 %%no_auth:
-    PRINT clfe_missing, clfe_missing_len
-    PRINT log_space, log_space_len
+    PRINTF %1, clfe_missing, clfe_missing_len
+    PRINTF %1, log_space, log_space_len
 
 %%pt4:
     ; pt. 4: timestamp
-    PRINT clfe_start_ts, clfe_start_ts_len
+    PRINTF %1, clfe_start_ts, clfe_start_ts_len
+
+    push %1            ;  save %1 (r9) so it doesn't get clobbered
 
     ; get the current wall-clock time
     ; clock_gettime(clockid, timespec)
@@ -285,14 +290,16 @@ section .bss
     mov rcx, tm_buf    ; fixed: pass struct tm*, not rs_buf
     call strftime
 
-    STRLEN rs_buf, rcx
-    PRINT rs_buf, rcx
+    pop %1
 
-    PRINT clfe_end_ts, clfe_end_ts_len
-    PRINT log_space, log_space_len
+    STRLEN rs_buf, rcx
+    PRINTF %1, rs_buf, rcx
+
+    PRINTF %1, clfe_end_ts, clfe_end_ts_len
+    PRINTF %1, log_space, log_space_len
 
 %%pt5:
-    PRINT clfe_qm, clfe_qm_len
+    PRINTF %1, clfe_qm, clfe_qm_len
 
     lea r10, [request]
     xor r9, r9
@@ -302,10 +309,10 @@ section .bss
     jge %%req_print
 
     movzx rax, byte [r10 + r9]
-    
+
     cmp al, 0x0d                ; \r
     je %%req_print
-    
+
     cmp al, 0xa                 ; \n
     je %%req_print
 
@@ -316,10 +323,10 @@ section .bss
     jmp %%req_scan
 
 %%req_print:
-    PRINT r10, r9
+    PRINTF %1, r10, r9
 
-    PRINT clfe_qm, clfe_qm_len
-    PRINT log_space, log_space_len
+    PRINTF %1, clfe_qm, clfe_qm_len
+    PRINTF %1, log_space, log_space_len
 
 %%pt6:
     ; pt. 6: status code
@@ -327,10 +334,10 @@ section .bss
     movzx r10, word [last_status]
 
     ITOA r10, status_buf, r9
-    PRINT status_buf, r9
+    PRINTF %1, status_buf, r9
 
-    PRINT log_space, log_space_len
-    
+    PRINTF %1, log_space, log_space_len
+
 %%pt7:
     ; pt. 7: size
     STRLEN content_length_b, rcx
@@ -338,53 +345,53 @@ section .bss
     cmp rcx, 0
     je %%no_len
 
-    PRINT content_length_b, rcx
-    PRINT log_space, log_space_len
+    PRINTF %1, content_length_b, rcx
+    PRINTF %1, log_space, log_space_len
 
     jmp %%pt8
 
 %%no_len:
-    PRINT clfe_nobytes, clfe_nobytes_len
-    PRINT log_space, log_space_len
+    PRINTF %1, clfe_nobytes, clfe_nobytes_len
+    PRINTF %1, log_space, log_space_len
 
 %%pt8:
     ; pt. 8: "referer"
-    PRINT clfe_qm, clfe_qm_len
+    PRINTF %1, clfe_qm, clfe_qm_len
 
     STRLEN referer, rcx
 
     cmp rcx, 0
     je %%no_referer
 
-    PRINT referer, rcx
-    PRINT clfe_qm, clfe_qm_len
-    PRINT log_space, log_space_len
+    PRINTF %1, referer, rcx
+    PRINTF %1, clfe_qm, clfe_qm_len
+    PRINTF %1, log_space, log_space_len
 
     jmp %%pt9
 
 %%no_referer:
-    PRINT clfe_missing, clfe_missing_len
-    PRINT clfe_qm, clfe_qm_len
-    PRINT log_space, log_space_len
+    PRINTF %1, clfe_missing, clfe_missing_len
+    PRINTF %1, clfe_qm, clfe_qm_len
+    PRINTF %1, log_space, log_space_len
 
 %%pt9:
     ; pt. 9: user agent
-    PRINT clfe_qm, clfe_qm_len
+    PRINTF %1, clfe_qm, clfe_qm_len
 
     STRLEN user_agent, rcx
 
     cmp rcx, 0
     je %%no_ua
 
-    PRINT user_agent, rcx
-    PRINT clfe_qm, clfe_qm_len
+    PRINTF %1, user_agent, rcx
+    PRINTF %1, clfe_qm, clfe_qm_len
 
     jmp %%done
 
 %%no_ua:
-    PRINT clfe_missing, clfe_missing_len
-    PRINT clfe_qm, clfe_qm_len
+    PRINTF %1, clfe_missing, clfe_missing_len
+    PRINTF %1, clfe_qm, clfe_qm_len
 
 %%done:
-    LF
+    PRINTF %1, sysutils_newline, 1
 %endmacro

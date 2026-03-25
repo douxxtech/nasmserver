@@ -29,6 +29,9 @@ section .data
     key_maxage            db "MAX_AGE", 0
     default_maxage        db "600", 0
 
+    key_logfile           db "LOG_FILE", 0
+    default_logfile       db "", 0
+
     ; errordocs files, relatively to the document_root (empty = none)
     ; start them with a slash !
 
@@ -75,6 +78,9 @@ section .bss
     errordoc_403_path  resb 257
     errordoc_401_path  resb 257
     errordoc_400_path  resb 257
+
+    log_file_path      resb 129
+    log_file           resq 1    ; log file descriptor
 
 section .text
     global initial_setup
@@ -161,6 +167,9 @@ initial_setup:
     ENV_DEFAULT env_path_buf, key_servedots, serve_dots_str, 5, default_servedots
     call .is_servedot_true
     
+    ; open the log file
+    ENV_DEFAULT env_path_buf, key_logfile, log_file_path, 129, default_logfile
+    call .open_logfile
 
     ; build sockaddr from the now-loaded port/interface
     movzx eax, word [port]
@@ -193,6 +202,23 @@ initial_setup:
 
 .set_servedot_true:
     mov byte [serve_dots], 1
+    ret
+
+.open_logfile:
+    cmp byte [log_file_path], 0
+    je .no_log_file
+
+    OPEN_FILE_A log_file_path
+
+    cmp rax, 0
+    jl .no_log_file              ; failed to open / create it
+
+    mov qword [log_file], rax
+
+    ret
+
+.no_log_file:
+    mov qword [log_file], 1  ; no log file = stdout
     ret
 
 .failed_read_file:
