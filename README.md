@@ -108,6 +108,7 @@ Copy `env.example` to `.env` and edit as needed. All keys are optional and defau
 | `PORT` | `8080` | Port to listen on |
 | `DOCUMENT_ROOT` | `.` | Document root directory, no trailing slash |
 | `INDEX_FILE` | `index.html` | File served when a directory is requested |
+| `LOG_FILE` | *(empty)* | File to write request logs instead of STDOUT |
 | `MAX_AGE` | `600` | Cache expiry offset in seconds for the `Expires:` header. Sets `Pragma: no-cache` if `0` |
 | `AUTH_USER` | *(empty)* | Username for Basic Authentication. Authentication is only enabled when this is set |
 | `AUTH_PASSWORD` | *(empty)* | Password for Basic Authentication. Only used if `AUTH_USER` is set |
