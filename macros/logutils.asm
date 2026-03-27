@@ -9,8 +9,11 @@ section .data
 
     rs_fmt      db "%d/%b/%Y:%H:%M:%S %z", 0
 
-    log_space                      db " ", 0
-    log_space_len                  equ $ - log_space - 1
+    log_space                       db " ", 0
+    log_space_len                   equ $ - log_space - 1
+
+    log_quotation_mark              db 0x22, 0  ; '"'
+    log_quotation_mark_len          equ $ - log_quotation_mark - 1
 
     ; log level prefixes
 
@@ -78,9 +81,6 @@ section .data
 
     clfe_end_ts                     db "]", 0
     clfe_end_ts_len                 equ $ - clfe_end_ts - 1
-
-    clfe_qm                         db 0x22, 0  ; '"'
-    clfe_qm_len                     equ $ - clfe_qm - 1
 
     clfe_nobytes                    db "0", 0
     clfe_nobytes_len                equ $ - clfe_nobytes - 1
@@ -290,7 +290,7 @@ section .bss
     PRINTF %1, log_space, log_space_len
 
 %%pt5:
-    PRINTF %1, clfe_qm, clfe_qm_len
+    PRINTF %1, log_quotation_mark, log_quotation_mark_len
 
     lea r10, [request]
     xor r9, r9
@@ -316,7 +316,7 @@ section .bss
 %%req_print:
     PRINTF %1, r10, r9
 
-    PRINTF %1, clfe_qm, clfe_qm_len
+    PRINTF %1, log_quotation_mark, log_quotation_mark_len
     PRINTF %1, log_space, log_space_len
 
 %%pt6:
@@ -347,7 +347,7 @@ section .bss
 
 %%pt8:
     ; pt. 8: "referer"
-    PRINTF %1, clfe_qm, clfe_qm_len
+    PRINTF %1, log_quotation_mark, log_quotation_mark_len
 
     STRLEN referer, rcx
 
@@ -355,19 +355,19 @@ section .bss
     je %%no_referer
 
     PRINTF %1, referer, rcx
-    PRINTF %1, clfe_qm, clfe_qm_len
+    PRINTF %1, log_quotation_mark, log_quotation_mark_len
     PRINTF %1, log_space, log_space_len
 
     jmp %%pt9
 
 %%no_referer:
     PRINTF %1, clfe_missing, clfe_missing_len
-    PRINTF %1, clfe_qm, clfe_qm_len
+    PRINTF %1, log_quotation_mark, log_quotation_mark_len
     PRINTF %1, log_space, log_space_len
 
 %%pt9:
     ; pt. 9: user agent
-    PRINTF %1, clfe_qm, clfe_qm_len
+    PRINTF %1, log_quotation_mark, log_quotation_mark_len
 
     STRLEN user_agent, rcx
 
@@ -375,13 +375,13 @@ section .bss
     je %%no_ua
 
     PRINTF %1, user_agent, rcx
-    PRINTF %1, clfe_qm, clfe_qm_len
+    PRINTF %1, log_quotation_mark, log_quotation_mark_len
 
     jmp %%done
 
 %%no_ua:
     PRINTF %1, clfe_missing, clfe_missing_len
-    PRINTF %1, clfe_qm, clfe_qm_len
+    PRINTF %1, log_quotation_mark, log_quotation_mark_len
 
 %%done:
     PRINTF %1, sysutils_newline, 1
