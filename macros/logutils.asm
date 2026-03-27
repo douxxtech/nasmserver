@@ -69,15 +69,6 @@ section .data
 
 
     ; request logging
-    log_request_pre                 db "Request: ", 0
-    log_request_pre_len             equ $ - log_request_pre - 1
-
-    log_arrow                       db " -> ", 0
-    log_arrow_len                   equ $ - log_arrow - 1
-
-    log_thing                       db " - ", 0
-    log_thing_len                   equ $ - log_thing - 1
-
     ; common log format extended
     clfe_missing                    db "-", 0
     clfe_missing_len                equ $ - clfe_missing - 1
