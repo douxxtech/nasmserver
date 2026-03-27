@@ -14,6 +14,13 @@
 # - Release description: detailed information about the release
 # - =--- END ---=: marks the end of the release 
 
+=--- v1.10 ---=
+### What changed
+- Added `AUTH_REALM` config option to set a custom realm for Basic Authentication (Default: `None`).
+- Added `USE_X_REAL_IP` config option to log the real client IP from the `X-Real-Ip` header when running behind a reverse proxy (Default: `false`).
+- Added a missing validation for the `errordoc_401` setting.
+=--- END ---=
+
 =--- v1.9 ---=
 ### What changed
 - Added persistent request logging to file in Apache HTTP Server combined log format (CLFE), including client IP, timestamp, request line, status code, response size, referer, and user-agent.
