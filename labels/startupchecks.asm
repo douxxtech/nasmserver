@@ -42,6 +42,19 @@ startup_checks:
     lea rdi, [errordoc_400_path]
 
     cmp byte [rdi], 0             ; BUILDPATH leaves it empty if errordoc_400 was empty
+    je .check_errordoc_401
+
+    FILE_EXISTS rdi
+
+    cmp rax, 1
+    je .check_errordoc_401
+
+    LOG_WARNING log_check_errordoc_missing, log_check_errordoc_missing_len
+
+.check_errordoc_401:
+    lea rdi, [errordoc_401_path]
+
+    cmp byte [rdi], 0
     je .check_errordoc_403
 
     FILE_EXISTS rdi
