@@ -40,7 +40,7 @@ section .data
     response_200             db "HTTP/1.0 200 OK", 0
 
     allow_header             db "Allow: GET, HEAD", 0
-    www_authenticate_header  db "WWW-Authenticate: Basic realm=", 0x22, "None", 0x22, 0  ; 0x22 is "
+    www_authenticate_header  db "WWW-Authenticate: Basic realm=", 0
     date_header              db "Date: ", 0
     server_header            db "Server: ", 0
     pragma_header            db "Pragma: no-cache", 0
@@ -575,7 +575,12 @@ _start:
 .write_401:
     AAPPEND r12, response_401
     AAPPEND r12, crlf
-    AAPPEND r12, www_authenticate_header
+
+    AAPPEND r12, www_authenticate_header  ; [...] Realm=
+    AAPPEND r12, log_quotation_mark       ; "
+    AAPPEND r12, auth_realm               ; Config realm name
+    AAPPEND r12, log_quotation_mark       ; "
+
     AAPPEND r12, crlf
     jmp .header_date
 
