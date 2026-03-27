@@ -23,6 +23,9 @@ section .data
     key_authpass          db "AUTH_PASSWORD", 0
     default_authpass      db "", 0
 
+    key_authrealm         db "AUTH_REALM", 0
+    default_authrealm     db "None", 0
+
     key_servedots         db "SERVE_DOTS", 0
     default_servedots     db "false", 0
 
@@ -77,6 +80,7 @@ section .bss
     ; auth
     auth_username      resb 129  ; HTTP 1.0 Basic Auth User
     auth_password      resb 129  ; HTTP 1.0 Basic Auth Pass
+    auth_realm         resb 129  ; HTTP 1.0 Basic Auth Realm
 
     ; logs
     log_file_path      resb 129  ; Path to access/error log
@@ -158,6 +162,7 @@ initial_setup:
     ENV_DEFAULT env_path_buf, key_name,         server_name,    129,  server_w_ver
     ENV_DEFAULT env_path_buf, key_authuser,     auth_username,  129,  default_authuser
     ENV_DEFAULT env_path_buf, key_authpass,     auth_password,  129,  default_authpass
+    ENV_DEFAULT env_path_buf, key_authrealm,    auth_realm,     129,  default_authrealm
 
     ENV_DEFAULT env_path_buf, key_errordoc_405, errordoc_405,   129,  default_errordoc_405
     ENV_DEFAULT env_path_buf, key_errordoc_404, errordoc_404,   129,  default_errordoc_404
