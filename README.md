@@ -105,6 +105,7 @@ Copy `env.example` to `.env` and edit as needed. All keys are optional and defau
 
 | Key | Default | Description |
 |---|---|---|
+| `BIND_ADDRESS` | `0.0.0.0` | IPv4 address to bind to |
 | `PORT` | `8080` | Port to listen on |
 | `DOCUMENT_ROOT` | `.` | Document root directory, no trailing slash |
 | `INDEX_FILE` | `index.html` | File served when a directory is requested |
