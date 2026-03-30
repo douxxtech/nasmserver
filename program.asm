@@ -161,13 +161,18 @@ _start:
     PRINT_TIMESTAMP
 
     PRINT log_prefix_info, log_prefix_info_len
-    PRINT log_listening_port, log_listening_port_len
+    PRINT log_listening_on, log_listening_on_len
+
+    STRLEN bind_addr_str, r9
+    PRINT bind_addr_str, r9                        ; x.x.x.x 
+
+    PRINT log_two_dots, log_two_dots_len           ; ":"
 
     ; port int to ascii
     movzx rbx, word [port]
 
     ITOA rbx, log_port_buf, r9
-    PRINTN log_port_buf, r9
+    PRINTN log_port_buf, r9                        ; XXXX
 
 
 .wait:
