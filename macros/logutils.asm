@@ -15,6 +15,10 @@ section .data
     log_quotation_mark              db 0x22, 0  ; '"'
     log_quotation_mark_len          equ $ - log_quotation_mark - 1
 
+    log_two_dots                    db ":", 0
+    log_two_dots_len                equ $ - log_two_dots - 1
+
+
     ; log level prefixes
 
     log_prefix_info                 db "[INFO] ", 0
@@ -55,6 +59,9 @@ section .data
     log_fail_read_env               db "Failed to read the provided configuration file path", 0
     log_fail_read_env_len           equ $ - log_fail_read_env - 1
 
+    log_fail_build_addr             db "Failed to parse the provided BIND_ADDRES. Make sure to provide a valid IPv4 address.", 0
+    log_fail_build_addr_len         equ $ - log_fail_build_addr - 1
+
     log_fail_socket                 db "Failed to open socket", 0
     log_fail_socket_len             equ $ - log_fail_socket - 1
 
@@ -67,8 +74,8 @@ section .data
     log_fail_accept                 db "Failed to accept connection", 0
     log_fail_accept_len             equ $ - log_fail_accept - 1
 
-    log_listening_port              db "Listening on port ", 0
-    log_listening_port_len          equ $ - log_listening_port - 1
+    log_listening_on                db "Listening on ", 0
+    log_listening_on_len            equ $ - log_listening_on - 1
 
 
     ; request logging
