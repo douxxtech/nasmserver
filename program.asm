@@ -774,7 +774,7 @@ _start:
     mov rdi, r14
     syscall
 
-    inc byte [process_count]
+    inc word [process_count]
 
     call .reap_loop
     jmp .wait
