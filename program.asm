@@ -62,7 +62,7 @@ section .bss
 
     ; request / response
     request           resb 8192  ; requests can get big
-    response          resb 512   ; 512 should be enough for headers
+    response          resb 1024  ; 1024 should be enough for headers
 
     ; path handling
     path              resb 768   ; docroot + url + index
