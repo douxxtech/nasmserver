@@ -59,7 +59,7 @@ section .data
     log_fail_read_env               db "Failed to read the provided configuration file path", 0
     log_fail_read_env_len           equ $ - log_fail_read_env - 1
 
-    log_fail_build_addr             db "Failed to parse the provided BIND_ADDRES. Make sure to provide a valid IPv4 address.", 0
+    log_fail_build_addr             db "Failed to parse the provided BIND_ADDRESS. Make sure to provide a valid IPv4 address.", 0
     log_fail_build_addr_len         equ $ - log_fail_build_addr - 1
 
     log_fail_socket                 db "Failed to open socket", 0
