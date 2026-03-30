@@ -199,15 +199,16 @@ section .bss
 %endmacro
 
 ; LOG_ERR msg, len
-;   Prints: "HH:MM:SS [ERROR] <msg>\n"
+;   Prints: "HH:MM:SS [ERROR] <msg>\n" to STDERR
 ;   Args:
 ;     %1: message buffer
 ;     %2: message length
 ;   Clobbers: rax, rdi, rsi, rdx, rcx
 %macro LOG_ERR 2
     PRINT_TIMESTAMP
-    PRINT log_prefix_err, log_prefix_err_len
-    PRINTN %1, %2
+    PRINTF 2, log_prefix_err, log_prefix_err_len
+    PRINTF 2, %1, %2
+    PRINTF 2, sysutils_newline, 1
 %endmacro
 
 ; LOG_REQUEST_CLFE
