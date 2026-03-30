@@ -1,7 +1,14 @@
+; initialsetup.asm - Loads config into buffers
+
+extern inet_pton  ; to parse the interface
+
 section .data
     env_path              db ".env", 0
 
     ; keys & defaults if no .env is provided or found
+    key_bindaddr          db "BIND_ADDRESS", 0
+    default_bindaddr      db "0.0.0.0", 0
+
     key_port              db "PORT", 0
     default_port          db "8080", 0
 
@@ -62,7 +69,8 @@ section .bss
     use_xri_str        resb 5    ; Buffer for "true\0"
 
     ; network
-    interface          resd 1    ; IP Address (0 = 0.0.0.0)
+    bind_addr_str      resb 16   ; "255.255.255.255\0"
+    interface          resd 1
     port               resw 1    ; Port number (host byte order)
     max_requests       resw 1    ; Max simultaneous connections (0-65535)
     max_age            resd 1    ; Cache-Control Max-Age value
@@ -193,13 +201,24 @@ initial_setup:
     ENV_DEFAULT env_path_buf, key_logfile, log_file_path, 129, default_logfile
     call .open_logfile
 
+    ENV_DEFAULT env_path_buf, key_bindaddr, bind_addr_str, 16, default_bindaddr
+
     ; build sockaddr from the now-loaded port/interface
     movzx eax, word [port]
     xchg al, ah                     ; htons(), swap bytes for big-endian
     mov word [sockaddr + 2], ax
 
+    ; inet_pton(af, src, dst)
+    mov rdi, 2                      ; AF_INET (ipv4)
+    lea rsi, [bind_addr_str]
+    lea rdx, [interface]
+    call inet_pton
+
+    cmp rax, 0
+    jle .bad_bind_addr              ; 0 = invalid format, -1 = unsupported af
+
     mov eax, [interface]
-    mov dword [sockaddr + 4], eax  
+    mov dword [sockaddr + 4], eax
 
     ; build errordoc full paths (document_root + errordoc_*)
     BUILDPATH errordoc_405_path, document_root, errordoc_405
@@ -255,6 +274,10 @@ initial_setup:
 
 .failed_read_file:
     LOG_ERR log_fail_read_env, log_fail_read_env_len
+    EXIT 1
+
+.bad_bind_addr:
+    LOG_ERR log_fail_build_addr, log_fail_build_addr_len
     EXIT 1
 
 .display_help:
