@@ -793,7 +793,7 @@ _start:
     cmp rax, 0
     jle .reap_done  ; no child reaped, stop
 
-    dec byte [process_count]
+    dec word [process_count]
     jmp .reap_loop
 
 .reap_done:
