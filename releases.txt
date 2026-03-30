@@ -14,6 +14,14 @@
 # - Release description: detailed information about the release
 # - =--- END ---=: marks the end of the release 
 
+=--- v1.11 ---=
+### What changed
+- Added `BIND_ADDRESS` config option to set which network interface the server listens on (Default: `0.0.0.0`).
+- The startup log now shows the full bind address and port (e.g. `Listening on 0.0.0.0:8080`).
+- Error messages are now printed to `STDERR`.
+- Fixed a bug where the simultaneous connection counter could overflow after 255 connections.
+=--- END ---=
+
 =--- v1.10 ---=
 ### What changed
 - Added `AUTH_REALM` config option to set a custom realm for Basic Authentication (Default: `None`).
