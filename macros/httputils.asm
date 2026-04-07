@@ -551,10 +551,10 @@ section .bss
 
 %%xri_scan:
     mov rax, r8
-    add rax, 12               ; "X-REal-Ip: " = 11 bytes + 1 byte value
+    add rax, 12               ; "X-Real-Ip: " = 11 bytes + 1 byte value
 
-    cmp rax, %2
-    jg %%xri_not_found
+    cmp rax, %2               ; not found
+    jg %%done
 
     cmp byte [rsi + r8], 'X'
     jne %%xri_next
@@ -614,9 +614,6 @@ section .bss
 %%xri_next:
     inc r8
     jmp %%xri_scan
-
-%%xri_not_found:
-    mov byte [%3], 0
 
 %%done:
 %endmacro
