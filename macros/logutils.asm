@@ -225,7 +225,7 @@ section .bss
 ;   Args:
 ;     %1: file descriptor
 ;   Reads from:
-;     client_ip_str    null-terminated client IP string
+;     real_ip          null-terminated client IP string
 ;     username         null-terminated auth username (or empty for "-")
 ;     request          raw HTTP request buffer (up to 8192 bytes, CR/LF terminated)
 ;     last_status      word containing the HTTP status code
@@ -237,7 +237,7 @@ section .bss
 
 %%pt1:
     ; pt. 1: ip
-    lea r10, [client_ip_str]
+    lea r10, [real_ip]
     STRLEN r10, rcx
     PRINTF %1, r10, rcx
     PRINTF %1, log_space, log_space_len
