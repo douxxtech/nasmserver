@@ -257,7 +257,7 @@ _start:
 .handle_request:
     READ_FILE r14, request, 8192
 
-    LOWERCASE_HEADERS request, 8192
+    LOWERCASE_HEADERS request, 8192  ;
 
     IS_HTTP_REQUEST request, 8192
 
@@ -273,7 +273,7 @@ _start:
     cmp rax, 200
     je .get
 
-    jmp .forbidden                 ; in case i add a new code and forgot to implement it here
+    jmp .forbidden                   ; in case i add a new code and forgot to implement it here
 
 .get:
     mov byte [request_type], 0
