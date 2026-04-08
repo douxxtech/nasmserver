@@ -59,6 +59,7 @@ section .bss
     ; network
     client_addr       resb 16
     client_ip_str     resb 16    ; "255.255.255.255\0"
+    real_ip           resb 40    ; Supports ipv6, so "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff\0"
 
     ; request / response
     request           resb 8192  ; requests can get big
@@ -814,7 +815,15 @@ _start:
     cmp byte [use_xri], 1
     jne .__log_req            ; check if we need to use the X-Real-Ip header
 
-    PARSE_XRI_HEADER request, 8192, client_ip_str, 15
+    PARSE_XRI_HEADER request, 8192, real_ip, 39
+    
+    cmp byte [real_ip], 0
+    jne .__log_req
+
+    mov rsi, client_ip_str
+    mov rdi, real_ip
+    mov rcx, 16
+    rep movsb
 
 .__log_req:
     mov r8, qword [log_file]
