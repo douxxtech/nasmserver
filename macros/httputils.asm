@@ -6,11 +6,16 @@ extern strptime
 extern timegm
 
 section .data
-    http_date_fmt  db "%a, %d %b %Y %H:%M:%S GMT", 0  ; RFC 7231 date format
-    date_timespec  dq 0, 0                            ; tv_sec, tv_nsec (reused for expire calc)
+    http_date_fmt   db "%a, %d %b %Y %H:%M:%S GMT", 0  ; RFC 7231 date format
+    date_timespec   dq 0, 0                            ; tv_sec, tv_nsec (reused for expire calc)
+
+    hdr_user_agent  db "user-agent", 0
+    hdr_referer     db "referer", 0
+    hdr_xri         db "x-real-ip", 0
+    hdr_ims         db "if-modified-since", 0
 
 section .bss
-    date_tm_buf    resb 64  ; struct tm
+    date_tm_buf  resb 64  ; struct tm
 
 ; IS_HTTP_REQUEST buffer, length
 ;   Checks for "GET "/"HEAD " prefix and "HTTP/1.x" just before the first CRLF.
@@ -145,6 +150,108 @@ section .bss
     jmp %%lwc_loop
 
 %%lwc_done:
+%endmacro
+
+; GET_HEADER buffer, length, name, name_len, out_buf, max_len
+;   Header scanner. Finds a lowercase header name and copies its value.
+;   Args:
+;     %1: buffer address
+;     %2: buffer length
+;     %3: header name string
+;     %4: header name length
+;     %5: output buffer, zeroed on failure
+;     %6: max bytes to copy
+;   Clobbers: rax, rsi, rdi, rcx, r8, r9
+%macro GET_HEADER 6
+    mov rsi, %1
+    xor r8, r8
+
+%%fh_scan:
+    ; bail if there's not enough buffer left for name + ": " + 1 byte of value
+    mov rax, r8
+    add rax, %4 + 3
+    cmp rax, %2
+    jg %%fh_not_found
+
+    ; first-char check before doing the full comparison
+    movzx rax, byte [%3]
+    cmp byte [rsi + r8], al
+    jne %%fh_next
+
+    ; header names must start at the beginning of a line
+    cmp r8, 2
+    jl %%fh_next
+
+    cmp word [rsi + r8 - 2], 0x0a0d   ; \r\n
+    jne %%fh_next
+
+    ; compare the full header name using repe cmpsb
+    push rsi
+    push rdi
+    push rcx
+
+    lea rdi, [rsi + r8]               ; rdi = current position in buffer
+    mov rsi, %3                       ; rsi = header name to match
+    mov rcx, %4                       ; rcx = header name length
+    repe cmpsb
+
+    pop rcx
+    pop rdi
+    pop rsi
+
+    jne %%fh_next
+
+    cmp word [rsi + r8 + %4], 0x203a  ; ": "
+    jne %%fh_next
+
+    ; skip past "name: " to get the value
+    add r8, %4 + 2
+    xor r9, r9
+
+%%fh_measure:
+    ; measure how many bytes the value is before \r, \n, or a control char
+    mov rax, r8
+    add rax, r9
+
+    cmp rax, %2
+    jge %%fh_copy
+
+    movzx rax, byte [rsi + rax]
+
+    cmp al, 0x0d                 ; \r = end of value
+    je %%fh_copy
+
+    cmp al, 0x0a                 ; \n = also end
+    je %%fh_copy
+
+    cmp al, 0x20                 ; control chars below space = end
+    jl %%fh_copy
+
+    inc r9
+
+    cmp r9, %6                   ; don't exceed the output buffer
+    jge %%fh_copy
+
+    jmp %%fh_measure
+
+%%fh_copy:
+    ; copy the measured value into the output buffer
+    lea rdi, [%5]
+    lea rax, [rsi + r8]
+
+    APPEND rdi, rax, r9
+
+    mov byte [rdi], 0     ; NUL-terminate
+    jmp %%fh_out
+
+%%fh_next:
+    inc r8
+    jmp %%fh_scan
+
+%%fh_not_found:
+    mov byte [%5], 0   ; zero out the buffer so callers don't see stale data
+
+%%fh_out:
 %endmacro
 
 ; PARSE_HTTP_PATH buffer, length, path_out, path_len_out
@@ -331,351 +438,54 @@ section .bss
 %%done:
 %endmacro
 
-; PARSE_IMS_HEADER buffer, length, out_buf
-;   Scans headers for "If-Modified-Since: " and copies the value into out_buf.
-;   Args:
-;     %1: buffer address
-;     %2: buffer length
-;     %3: output buffer (min 32 bytes), zeroed on failure
-;   Clobbers: rax, rsi, r8, r9, rdi
-%macro PARSE_IMS_HEADER 3
-    mov rsi, %1
-    xor r8, r8
-
-%%ims_scan:
-    mov rax, r8
-    add rax, 20               ; "If-Modified-Since: " = 19 bytes + 1 byte value
-
-    cmp rax, %2
-    jg %%not_found
-
-    cmp byte [rsi + r8], 'I'
-    jne %%ims_next
-
-    cmp r8, 2
-    jl %%ims_next
-
-    cmp word [rsi + r8 - 2], 0x0a0d
-    jne %%ims_next
-
-    ; "If-M" = 0x4d2d6649
-    ; "odif" = 0x6669646f
-    ; "ied-" = 0x2d646569
-    ; "Sinc" = 0x636e6953
-    ; "e: "  = 0x3a65 (word) + 0x20 (byte)
-    cmp dword [rsi + r8 +  0], 0x4d2d6649
-    jne %%ims_next
-    cmp dword [rsi + r8 +  4], 0x6669646f
-    jne %%ims_next
-    cmp dword [rsi + r8 +  8], 0x2d646569
-    jne %%ims_next
-    cmp dword [rsi + r8 + 12], 0x636e6953
-    jne %%ims_next
-    cmp word  [rsi + r8 + 16], 0x3a65     ; "e:"
-    jne %%ims_next
-    cmp byte  [rsi + r8 + 18], 0x20       ; " "
-    jne %%ims_next
-
-    add r8, 19     ; skip past "If-Modified-Since: "
-    xor r9, r9
-    lea rdi, [%3]
-
-%%ims_copy:
-    mov rax, r8
-    add rax, r9
-
-    cmp rax, %2
-    jge %%ims_done
-
-    movzx rax, byte [rsi + rax]
-    
-    cmp al, 0x0d                 ; \r = end of header value
-    je %%ims_done
-
-    cmp al, 0x0a                 ; \n = also end
-    je %%ims_done
-
-    cmp al, 0x20                 ; any control char below space = end
-    jl %%ims_done
-
-    mov [rdi + r9], al
-    inc r9
-
-    cmp r9, 31
-    jge %%ims_done
-
-    jmp %%ims_copy
-
-%%ims_done:
-    mov byte [rdi + r9], 0
-    jmp %%done
-
-%%ims_next:
-    inc r8
-    jmp %%ims_scan
-
-%%not_found:
-    mov byte [%3], 0
-
-%%done:
-%endmacro
-
 ; PARSE_UA_HEADER buffer, length, out_buf, max_len
-;   Scans headers for "User-Agent: " and copies the value into out_buf.
+;   Scans headers for "user-agent" and copies the value into out_buf.
 ;   Args:
 ;     %1: buffer address
 ;     %2: buffer length
 ;     %3: output buffer, zeroed on failure
 ;     %4: max bytes to copy (should be resb size - 1)
-;   Clobbers: rax, rsi, rdi, r8, r9
+;   Clobbers: rax, rsi, rdi, rcx, r8, r9
 %macro PARSE_UA_HEADER 4
-    mov rsi, %1
-    xor r8, r8
-
-
-%%ua_scan:
-    mov rax, r8
-    add rax, 13               ; "User-Agent: " = 12 bytes + 1 byte value
-
-    cmp rax, %2
-    jg %%ua_not_found
-
-    cmp byte [rsi + r8], 'U'
-    jne %%ua_next
-
-    cmp r8, 2
-    jl %%ua_next
-
-    cmp word [rsi + r8 - 2], 0x0a0d
-    jne %%ua_next
-
-    ; "User" = 0x72657355
-    ; "-Age" = 0x6567412d
-    ; "nt: " = 0x203a746e
-    cmp dword [rsi + r8 +  0], 0x72657355
-    jne %%ua_next
-    cmp dword [rsi + r8 +  4], 0x6567412d
-    jne %%ua_next
-    cmp dword [rsi + r8 +  8], 0x203a746e
-    jne %%ua_next
-
-    add r8, 12                ; skip past "User-Agent: "
-    xor r9, r9
-    lea rdi, [%3]
-
-
-%%ua_copy:
-    mov rax, r8
-    add rax, r9
-
-    cmp rax, %2
-    jge %%ua_done
-
-    movzx rax, byte [rsi + rax]
-
-    cmp al, 0x0d                 ; \r = end of header value
-    je %%ua_done
-
-    cmp al, 0x0a                 ; \n = also end
-    je %%ua_done
-
-    cmp al, 0x20                 ; any control char below space = end
-    jl %%ua_done
-
-    mov [rdi + r9], al
-    inc r9
-
-    cmp r9, %4
-    jge %%ua_done
-
-    jmp %%ua_copy
-
-
-%%ua_done:
-    mov byte [rdi + r9], 0
-    jmp %%done
-
-
-%%ua_next:
-    inc r8
-    jmp %%ua_scan
-
-
-%%ua_not_found:
-    mov byte [%3], 0
-
-
-%%done:
+    GET_HEADER %1, %2, hdr_user_agent, 10, %3, %4
 %endmacro
 
 
 ; PARSE_REFERER_HEADER buffer, length, out_buf, max_len
-;   Scans headers for "Referer: " and copies the value into out_buf.
+;   Scans headers for "referer" and copies the value into out_buf.
 ;   Args:
 ;     %1: buffer address
 ;     %2: buffer length
 ;     %3: output buffer, zeroed on failure
 ;     %4: max bytes to copy (should be resb size - 1)
-;   Clobbers: rax, rsi, rdi, r8, r9
+;   Clobbers: rax, rsi, rdi, rcx, r8, r9
 %macro PARSE_REFERER_HEADER 4
-    mov rsi, %1
-    xor r8, r8
-
-
-%%ref_scan:
-    mov rax, r8
-    add rax, 10               ; "Referer: " = 9 bytes + 1 byte value
-
-    cmp rax, %2
-    jg %%ref_not_found
-
-    cmp byte [rsi + r8], 'R'
-    jne %%ref_next
-
-    cmp r8, 2
-    jl %%ref_next
-
-    cmp word [rsi + r8 - 2], 0x0a0d
-    jne %%ref_next
-
-    ; "Refe" = 0x65666552
-    ; "rer:" = 0x3a726572
-    ; " "   = 0x20
-    cmp dword [rsi + r8 + 0], 0x65666552
-    jne %%ref_next
-    cmp dword [rsi + r8 + 4], 0x3a726572
-    jne %%ref_next
-    cmp byte  [rsi + r8 + 8], 0x20
-    jne %%ref_next
-
-    add r8, 9                 ; skip past "Referer: "
-    xor r9, r9
-    lea rdi, [%3]
-
-
-%%ref_copy:
-    mov rax, r8
-    add rax, r9
-
-    cmp rax, %2
-    jge %%ref_done
-
-    movzx rax, byte [rsi + rax]
-
-    cmp al, 0x0d                 ; \r = end of header value
-    je %%ref_done
-
-    cmp al, 0x0a                 ; \n = also end
-    je %%ref_done
-
-    cmp al, 0x20                 ; any control char below space = end
-    jl %%ref_done
-
-    mov [rdi + r9], al
-    inc r9
-
-    cmp r9, %4
-    jge %%ref_done
-
-    jmp %%ref_copy
-
-
-%%ref_done:
-    mov byte [rdi + r9], 0
-    jmp %%done
-
-
-%%ref_next:
-    inc r8
-    jmp %%ref_scan
-
-
-%%ref_not_found:
-    mov byte [%3], 0
-
-
-%%done:
+    GET_HEADER %1, %2, hdr_referer, 7, %3, %4
 %endmacro
 
+
 ; PARSE_XRI_HEADER buffer, length, out_buf, max_len
-;   Scans headers for "X-Real-IP: " and copies the value into out_buf.
+;   Scans headers for "x-real-ip" and copies the value into out_buf.
 ;   Args:
 ;     %1: buffer address
 ;     %2: buffer length
 ;     %3: output buffer, zeroed on failure
 ;     %4: max bytes to copy (should be resb size - 1)
-;   Clobbers: rax, rsi, rdi, r8, r9
+;   Clobbers: rax, rsi, rdi, rcx, r8, r9
 %macro PARSE_XRI_HEADER 4
-    mov rsi, %1
-    xor r8, r8
+    GET_HEADER %1, %2, hdr_xri, 9, %3, %4
+%endmacro
 
-%%xri_scan:
-    mov rax, r8
-    add rax, 12               ; "X-Real-Ip: " = 11 bytes + 1 byte value
 
-    cmp rax, %2               ; not found
-    jg %%done
-
-    cmp byte [rsi + r8], 'X'
-    jne %%xri_next
-
-    ; Ensure we are at the start of a line
-    cmp r8, 2
-    jl %%xri_next
-    cmp word [rsi + r8 - 2], 0x0a0d
-    jne %%xri_next
-
-    ; "X-Re" = 0x65522d58
-    ; "al-I" = 0x492d6c61
-    ; "p: "  = 0x203a50
-    cmp dword [rsi + r8 + 0], 0x65522d58
-    jne %%xri_next
-    cmp dword [rsi + r8 + 4], 0x492d6c61
-    jne %%xri_next
-    cmp word  [rsi + r8 + 8], 0x3a70      ; "p:"
-    jne %%xri_next
-    cmp byte  [rsi + r8 + 10], 0x20       ; " "
-    jne %%xri_next
-
-    add r8, 11                            ; skip past "X-Real-IP: "
-    xor r9, r9
-    lea rdi, [%3]
-
-%%xri_copy:
-    mov rax, r8
-    add rax, r9
-
-    cmp rax, %2
-    jge %%xri_done
-
-    movzx rax, byte [rsi + rax]
-
-    cmp al, 0x0d                 ; \r = end of header value
-    je %%xri_done
-
-    cmp al, 0x0a                 ; \n = also end
-    je %%xri_done
-
-    cmp al, 0x20                 ; stop at space or control chars
-    jl %%xri_done
-
-    mov [rdi + r9], al
-    inc r9
-
-    cmp r9, %4
-    jge %%xri_done
-
-    jmp %%xri_copy
-
-%%xri_done:
-    mov byte [rdi + r9], 0
-    jmp %%done
-
-%%xri_next:
-    inc r8
-    jmp %%xri_scan
-
-%%done:
+; PARSE_IMS_HEADER buffer, length, out_buf
+;   Scans headers for "if-modified-since" and copies the value into out_buf.
+;   Args:
+;     %1: buffer address
+;     %2: buffer length
+;     %3: output buffer (min 32 bytes), zeroed on failure
+;   Clobbers: rax, rsi, rdi, rcx, r8, r9
+%macro PARSE_IMS_HEADER 3
+    GET_HEADER %1, %2, hdr_ims, 17, %3, 31
 %endmacro
 
 ; HTTP_EXPIRE_DATE offset_sec, out_buf
