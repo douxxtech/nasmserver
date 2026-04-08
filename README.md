@@ -117,7 +117,7 @@ Copy `env.example` to `.env` and edit as needed. All keys are optional and defau
 | `SERVE_DOTS` | `false` | Whether `.dotfiles` and `.dotfolders/` should be served |
 | `MAX_REQUESTS` | `20` | Max simultaneous connections (1–65535) |
 | `SERVER_NAME` | `NASMServer/ver` | Value for the `Server:` response header |
-| `USE_X_REAL_IP` | `false` | Use the `X-Real-Ip` header for logging instead of the remote socket address |
+| `USE_X_REAL_IP` | `false` | Use the `X-Real-IP` header for logging instead of the remote socket address |
 | `ERRORDOC_400` | *(empty)* | Error page path, relative to `DOCUMENT_ROOT`, must start with `/` |
 | `ERRORDOC_401` | *(empty)* | Same, for 401 |
 | `ERRORDOC_403` | *(empty)* | Same, for 403 |

@@ -813,7 +813,7 @@ _start:
     PARSE_REFERER_HEADER request, 8192, referer,    1024
 
     cmp byte [use_xri], 1
-    jne .__log_req            ; check if we need to use the X-Real-Ip header
+    jne .__log_req            ; check if we need to use the X-Real-IP header
 
     PARSE_XRI_HEADER request, 8192, real_ip, 39
     

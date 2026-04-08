@@ -42,7 +42,7 @@ section .data
     key_logfile           db "LOG_FILE", 0
     default_logfile       db "", 0
 
-    key_use_xri           db "USE_X_REAL_IP", 0   ; if we should use 'X-Real-Ip' to display the IP address in the logs
+    key_use_xri           db "USE_X_REAL_IP", 0   ; if we should use 'X-Real-IP' to display the IP address in the logs
     default_use_xri       db "false", 0
 
     ; errordocs files, relatively to the document_root (empty = none)
