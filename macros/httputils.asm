@@ -87,6 +87,66 @@ section .bss
     pop rsi
 %endmacro
 
+; LOWERCASE_HEADERS buffer, length
+;   Lowercases header names in-place, stopping at \r\n\r\n or end of buffer.
+;   Only lowercases chars before the ':' on each line (preserves values).
+;   Args:
+;     %1: buffer address
+;     %2: buffer length
+;   Clobbers: rax, rsi, r8, r9
+%macro LOWERCASE_HEADERS 2
+    mov rsi, %1
+    xor r8, r8
+    xor r9, r9   ; r9 = 1 if we're past the ':' on this line
+
+%%lwc_loop:
+    cmp r8, %2
+    jge %%lwc_done
+
+    movzx rax, byte [rsi + r8]
+
+    ; check for end of headers (\r\n\r\n)
+    cmp r8, 3
+    jl %%lwc_skip_eoh
+
+    cmp dword [rsi + r8 - 3], 0x0a0d0a0d
+    je %%lwc_done
+
+%%lwc_skip_eoh:
+    ; reset "past colon" flag on newline
+    cmp al, 0x0a
+    je %%lwc_newline
+
+    cmp al, ':'
+    je %%lwc_colon
+
+    ; only lowercase if we haven't hit ':' yet
+    test r9, r9
+    jnz %%lwc_skip
+
+    cmp al, 'A'
+    jl %%lwc_skip
+    cmp al, 'Z'
+    jg %%lwc_skip
+    or al, 0x20         ; to lowercase
+    mov [rsi + r8], al
+
+    jmp %%lwc_skip
+
+%%lwc_colon:
+    mov r9, 1
+    jmp %%lwc_skip
+
+%%lwc_newline:
+    xor r9, r9  ; reset for next line
+
+%%lwc_skip:
+    inc r8
+    jmp %%lwc_loop
+
+%%lwc_done:
+%endmacro
+
 ; PARSE_HTTP_PATH buffer, length, path_out, path_len_out
 ;   Skips the method and spaces, then copies the path until the next space.
 ;   Args:
