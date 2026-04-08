@@ -14,6 +14,13 @@
 # - Release description: detailed information about the release
 # - =--- END ---=: marks the end of the release 
 
+=--- v1.12 ---=
+### What changed
+- Headers are lowercased before processing, so proxies or clients sending non-standard casing won't break features like `X-Real-IP` or `If-Modified-Since`.
+- `X-Real-IP` logging now falls back to the direct client IP if the header is missing or empty, instead of logging nothing.
+- `X-Real-IP` now supports IPv6 addresses.
+=--- END ---=
+
 =--- v1.11 ---=
 ### What changed
 - Added `BIND_ADDRESS` config option to set which network interface the server listens on (Default: `0.0.0.0`).
