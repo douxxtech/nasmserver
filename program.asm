@@ -258,7 +258,7 @@ _start:
 .handle_request:
     READ_FILE r14, request, 8192
 
-    LOWERCASE_HEADERS request, 8192  ;
+    LOWERCASE_HEADERS request, 8192
 
     IS_HTTP_REQUEST request, 8192
 

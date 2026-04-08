@@ -104,6 +104,20 @@ section .bss
     xor r8, r8
     xor r9, r9   ; r9 = 1 if we're past the ':' on this line
 
+%%lwc_skip_reqline:
+    ; skip the first line to avoid corrupting the request itself
+    cmp r8, %2
+    jge %%lwc_done
+
+    cmp word [rsi + r8], 0x0a0d
+    je %%lwc_start
+
+    inc r8
+    jmp %%lwc_skip_reqline
+
+%%lwc_start:
+    add r8, 2
+
 %%lwc_loop:
     cmp r8, %2
     jge %%lwc_done
