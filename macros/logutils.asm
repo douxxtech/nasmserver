@@ -46,10 +46,10 @@ section .data
     log_check_docroot_perms         db "document_root is not readable/accessible", 0
     log_check_docroot_perms_len     equ $ - log_check_docroot_perms - 1
 
-    log_check_errordoc_missing      db "errordoc file not found (requests will get empty error pages)", 0
+    log_check_errordoc_missing      db "Errordoc file not found (requests will get empty error pages)", 0
     log_check_errordoc_missing_len  equ $ - log_check_errordoc_missing - 1
 
-    log_check_port_privileged       db "Warning: port < 1024 requires root privileges", 0
+    log_check_port_privileged       db "Port < 1024 might require root privileges", 0
     log_check_port_privileged_len   equ $ - log_check_port_privileged - 1
 
     log_log_file_not_opened         db "Failed to open the provided log file (missing permissions?). STDOUT will be used instead.", 0
