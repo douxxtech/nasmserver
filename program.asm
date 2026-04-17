@@ -10,6 +10,7 @@
 
 %include "./labels/flagparser.asm"
 %include "./labels/initialsetup.asm"
+%include "./labels/preserve.asm"
 %include "./labels/startupchecks.asm"
 
 extern inet_ntop ; to process the client IP address
@@ -106,51 +107,12 @@ _start:
 
     call startup_checks  ; from labels/startupchecks.asm
 
+    call pre_serve
+
     LF
     PRINTN log_started_nasmserver, log_started_nasmserver_len
 
 .start_server:
-
-    ; create the server TCP socket
-    ; socket(domain, type, protocol)
-    mov rax, 41
-    mov rdi, 2            ; ipv4
-    mov rsi, 1            ; stream
-    mov rdx, 0            ; tcp
-    syscall
-
-    cmp rax, 0
-    jl .fail_socket
-
-    mov r15, rax          ; r15 will hold the socket fd
-
-    ; allow reuse of the address so we can restart without waiting for TIME_WAIT
-    ; setsockopt(fd, level, optname, optval, optlen)
-    mov rax, 54
-    mov rdi, r15
-    mov rsi, 1            ; SOL_SOCKET
-    mov rdx, 2            ; SO_REUSEADDR
-    mov r10, sockopt
-    mov r8,  4
-    syscall
-
-    cmp rax, 0
-    jne .fail_setsockopt  ;
-
-
-.bind_port:
-
-    ; bind the socket to the configured port and interface
-    ; bind(fd, sockaddr, addrlen)
-    mov rax, 49
-    mov rdi, r15
-    mov rsi, sockaddr
-    mov rdx, 16
-    syscall
-
-    cmp rax, 0
-    jl .fail_bind
-
     ; start listening for incoming connections
     ; listen(fd, backlog)
     mov rax, 50
@@ -158,23 +120,7 @@ _start:
     movzx rsi, byte [max_requests]
     syscall
 
-    ; this mess prints the port log
-    PRINT_TIMESTAMP
-
-    PRINT log_prefix_info, log_prefix_info_len
-    PRINT log_listening_on, log_listening_on_len
-
-    STRLEN bind_addr_str, r9
-    PRINT bind_addr_str, r9                        ; x.x.x.x 
-
-    PRINT log_two_dots, log_two_dots_len           ; ":"
-
-    ; port int to ascii
-    movzx rbx, word [port]
-
-    ITOA rbx, log_port_buf, r9
-    PRINTN log_port_buf, r9                        ; XXXX
-
+    LOG_PORT
 
 .wait:
     ; from here, we're NOT stopping the program anymore
@@ -830,18 +776,6 @@ _start:
     LOG_REQUEST_CLFE r8
 
     ret
-
-.fail_socket:
-    LOG_ERR log_fail_socket, log_fail_socket_len
-    EXIT rax
-
-.fail_setsockopt:
-    LOG_ERR log_fail_setsockopt, log_fail_setsockopt_len
-    EXIT rax
-
-.fail_bind:
-    LOG_ERR log_fail_bind, log_fail_bind_len
-    EXIT rax
 
 .fail_accept:
     LOG_ERR log_fail_accept, log_fail_accept_len
