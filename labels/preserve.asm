@@ -67,6 +67,9 @@ pre_serve:
     cmp eax, 0
     jne .chroot_end
 
+    cmp byte [use_chroot], 1
+    jne .chroot_end
+
 .do_chroot:
 
     ; chdir first so that chroot(".") jails us inside document_root
@@ -107,6 +110,9 @@ pre_serve:
     ; sets current user to "nobody" for minimal privileges (if root)
     mov eax, [current_uid]
     cmp eax, 0
+    jne .nobody_end
+
+    cmp byte [be_nobody], 1
     jne .nobody_end
 
     ; setuid(uid)
