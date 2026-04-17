@@ -5,7 +5,6 @@ section .text
 ;   Prepares the server environment before entering the accept loop.
 ;   - If running as root, chroots into document_root and resets it to ".".
 pre_serve:
-pre_serve:
     mov eax, [current_uid]
     cmp eax, 0
     jne .skip_chroot
