@@ -1,3 +1,5 @@
+; preserve.asm - Prepares the server environment
+
 section .text
     global pre_serve
 
