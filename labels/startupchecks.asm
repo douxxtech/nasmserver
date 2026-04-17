@@ -104,6 +104,10 @@ startup_checks:
     LOG_WARNING log_check_errordoc_missing, log_check_errordoc_missing_len
 
 .check_port:
+    mov rax, [current_uid]
+    cmp rax, 0
+    je .check_logfile
+
     movzx rax, word [port]
     cmp rax, 1024
     jge .check_logfile
