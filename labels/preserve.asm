@@ -68,23 +68,40 @@ pre_serve:
     jne .chroot_end
 
 .do_chroot:
+
+    ; chdir first so that chroot(".") jails us inside document_root
+    ; chdir(dir)
+    mov rax, 80
+    lea rdi, document_root
+    syscall
+
+    ; set the docroot to '.' (/)
+    mov word [document_root], 0x002e  ; ".\0" (reset before chroot since we're already inside)
+
     ; chroot(filename)
     mov rax, 161
-    mov rdi, document_root
+    lea rdi, document_root
     syscall
 
     cmp rax, 0
     jl .chroot_fail
 
-    mov word [document_root], 0x002e  ; ".\0"
+    ; rebuild errordoc paths now that we're inside the jail
+    BUILDPATH errordoc_405_path, document_root, errordoc_405
+    BUILDPATH errordoc_404_path, document_root, errordoc_404
+    BUILDPATH errordoc_403_path, document_root, errordoc_403
+    BUILDPATH errordoc_401_path, document_root, errordoc_401
+    BUILDPATH errordoc_400_path, document_root, errordoc_400
+
     jmp .chroot_end
 
 .chroot_fail:
     ; for the moment do nothing
     ; we'll log in verbose when the feature will be there
+    EXIT 69
 
 .chroot_end:
-    ret
+    ret  ; .do_chroot return point
 
 .im_nobody:
     ; sets current user to "nobody" for minimal privileges (if root)
@@ -113,12 +130,15 @@ pre_serve:
 
 .fail_socket:
     LOG_ERR log_fail_socket, log_fail_socket_len
-    EXIT rax
+    mov rdi, rax
+    EXIT rdi
 
 .fail_setsockopt:
     LOG_ERR log_fail_setsockopt, log_fail_setsockopt_len
-    EXIT rax
+    mov rdi, rax
+    EXIT rdi
 
 .fail_bind:
     LOG_ERR log_fail_bind, log_fail_bind_len
-    EXIT rax
+    mov rdi, rax
+    EXIT rdi
