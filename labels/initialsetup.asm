@@ -61,6 +61,9 @@ section .data
     default_errordoc_400  db "", 0
 
 section .bss
+    ; system
+    current_uid        resd 1    ; Storing the current uid to check for root
+
     ; env / strings
     env_path_buf       resb 129  ; Path to .env file
     word_str_buf       resb 8    ; Temp buffer for ASCII to Integer conversion
@@ -113,8 +116,7 @@ section .text
 
 ; initial_setup
 ;   Loads configuration from a .env file (or -e) into BSS buffers.
-;   Populates: port, max_requests, document_root, index_file, server_name,
-;              errordoc_* paths, and sockaddr.
+;   Also populate other buffers with additional info. 
 ;   Exits with code 1 if -e was given but the file doesn't exist.
 ;   Exits with code 0 if the help was displayed (-h).
 initial_setup:
@@ -227,7 +229,14 @@ initial_setup:
     BUILDPATH errordoc_401_path, document_root, errordoc_401
     BUILDPATH errordoc_400_path, document_root, errordoc_400
 
-    ret
+.check_user:
+    ; getuid()
+    mov rax, 102
+
+    syscall
+
+    mov [current_uid], rax
+    ret                     ; initial_setup return point
 
 .build_server_name:
     lea r14, [server_w_ver]
