@@ -55,7 +55,13 @@ section .data
     log_log_file_not_opened         db "Failed to open the provided log file (missing permissions?). STDOUT will be used instead.", 0
     log_log_file_not_opened_len     equ $ - log_log_file_not_opened - 1
 
-    ; startup / fatal errors
+    log_chroot_noroot               db "Not able to chroot since we're not root", 0
+    log_chroot_noroot_len           equ $ - log_chroot_noroot - 1
+
+    log_nobody_noroot               db "Not able to set uid to nobody since we're not root", 0
+    log_nobody_noroot_len           equ $ - log_nobody_noroot - 1
+
+    ; startup errors / warnings 
     log_fail_read_env               db "Failed to read the provided configuration file path", 0
     log_fail_read_env_len           equ $ - log_fail_read_env - 1
 
@@ -76,7 +82,6 @@ section .data
 
     log_listening_on                db "Listening on ", 0
     log_listening_on_len            equ $ - log_listening_on - 1
-
 
     ; request logging
     ; common log format extended
