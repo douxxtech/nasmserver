@@ -46,16 +46,22 @@ section .data
     log_check_docroot_perms         db "document_root is not readable/accessible", 0
     log_check_docroot_perms_len     equ $ - log_check_docroot_perms - 1
 
-    log_check_errordoc_missing      db "errordoc file not found (requests will get empty error pages)", 0
+    log_check_errordoc_missing      db "Errordoc file not found (requests will get empty error pages)", 0
     log_check_errordoc_missing_len  equ $ - log_check_errordoc_missing - 1
 
-    log_check_port_privileged       db "Warning: port < 1024 requires root privileges", 0
+    log_check_port_privileged       db "Port < 1024 might require root privileges", 0
     log_check_port_privileged_len   equ $ - log_check_port_privileged - 1
 
     log_log_file_not_opened         db "Failed to open the provided log file (missing permissions?). STDOUT will be used instead.", 0
     log_log_file_not_opened_len     equ $ - log_log_file_not_opened - 1
 
-    ; startup / fatal errors
+    log_chroot_noroot               db "Not able to chroot since we're not root", 0
+    log_chroot_noroot_len           equ $ - log_chroot_noroot - 1
+
+    log_nobody_noroot               db "Not able to set uid to nobody since we're not root", 0
+    log_nobody_noroot_len           equ $ - log_nobody_noroot - 1
+
+    ; startup errors / warnings 
     log_fail_read_env               db "Failed to read the provided configuration file path", 0
     log_fail_read_env_len           equ $ - log_fail_read_env - 1
 
@@ -76,7 +82,6 @@ section .data
 
     log_listening_on                db "Listening on ", 0
     log_listening_on_len            equ $ - log_listening_on - 1
-
 
     ; request logging
     ; common log format extended
@@ -216,6 +221,32 @@ section .bss
     PRINTF 2, log_prefix_err, log_prefix_err_len
     PRINTF 2, %1, %2
     PRINTF 2, sysutils_newline, 1
+%endmacro
+
+; LOG_PORT
+;   Prints: "HH:MM:SS [INFO] Listening on <bind_addr>:<port>\n"
+;   Uses:
+;     bind_addr_str  null-terminated string containing the IPv4 address
+;     port           word containing the port number (host byte order)
+;     log_port_buf   buffer for integer-to-ASCII conversion
+;   Clobbers: rax, rbx, rdi, rsi, rdx, rcx, r9
+%macro LOG_PORT 0
+    ; this mess prints the port log
+    PRINT_TIMESTAMP
+
+    PRINT log_prefix_info, log_prefix_info_len
+    PRINT log_listening_on, log_listening_on_len
+
+    STRLEN bind_addr_str, r9
+    PRINT bind_addr_str, r9                        ; x.x.x.x 
+
+    PRINT log_two_dots, log_two_dots_len           ; ":"
+
+    ; port int to ascii
+    movzx rbx, word [port]
+
+    ITOA rbx, log_port_buf, r9
+    PRINTN log_port_buf, r9                        ; XXXX
 %endmacro
 
 ; LOG_REQUEST_CLFE

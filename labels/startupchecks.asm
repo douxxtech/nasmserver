@@ -94,31 +94,57 @@ startup_checks:
     lea rdi, [errordoc_405_path]
 
     cmp byte [rdi], 0
-    je .check_port
+    je .check_logfile
 
     FILE_EXISTS rdi
 
     cmp rax, 1
-    je .check_port
+    je .check_logfile
 
     LOG_WARNING log_check_errordoc_missing, log_check_errordoc_missing_len
 
-.check_port:
-    movzx rax, word [port]
-    cmp rax, 1024
-    jge .check_logfile
-
-    LOG_WARNING log_check_port_privileged, log_check_port_privileged_len
-
 .check_logfile:
     cmp byte [log_file_path], 0
-    je .checks_done         ; no file path provided, just skep
+    je .check_port         ; no file path provided, just skep
 
     cmp qword [log_file], 1
-    jne .checks_done        ; if != 1, its ok
+    jne .check_port        ; if != 1, its ok
 
     ; if its 1, it means that we failed to open the file
     LOG_WARNING log_log_file_not_opened, log_log_file_not_opened_len 
+
+.check_port:
+    mov eax, [current_uid]
+    cmp eax, 0
+    je .check_chroot
+
+    movzx rax, word [port]
+    cmp rax, 1024
+    jge .check_chroot
+
+    LOG_WARNING log_check_port_privileged, log_check_port_privileged_len
+
+.check_chroot:
+    cmp byte [use_chroot], 1
+    jne .check_nobody
+
+    mov eax, [current_uid]
+    cmp eax, 0
+    je .check_nobody
+
+    ; if not root, we won't be able to chroot
+    LOG_WARNING log_chroot_noroot, log_chroot_noroot_len
+
+.check_nobody:
+    cmp byte [be_nobody], 1
+    jne .checks_done
+
+    mov eax, [current_uid]
+    cmp eax, 0
+    je .checks_done
+
+    ; if not root, we won't be able to set uid to nobody
+    LOG_WARNING log_nobody_noroot, log_nobody_noroot_len
 
 .checks_done:
     LOG_INFO log_startup_ok, log_startup_ok_len

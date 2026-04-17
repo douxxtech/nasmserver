@@ -45,6 +45,12 @@ section .data
     key_use_xri           db "USE_X_REAL_IP", 0   ; if we should use 'X-Real-IP' to display the IP address in the logs
     default_use_xri       db "false", 0
 
+    key_use_chroot        db "USE_CHROOT", 0
+    default_use_chroot    db "true", 0
+
+    key_noperms           db "DROP_PRIVILEGES", 0
+    default_noperms       db "true", 0
+
     ; errordocs files, relatively to the document_root (empty = none)
     ; start them with a slash !
 
@@ -61,6 +67,13 @@ section .data
     default_errordoc_400  db "", 0
 
 section .bss
+    ; system
+    current_uid        resd 1    ; Storing the current uid to check for root
+    use_chroot_str     resb 5    ; Buffer for "true\0"
+    use_chroot         resb 1    ; Toggle for chroot-ing
+    be_nobody_str      resb 5    ; Buffer for "true\0"
+    be_nobody          resb 1    ; Toggle for nobody-ing
+
     ; env / strings
     env_path_buf       resb 129  ; Path to .env file
     word_str_buf       resb 8    ; Temp buffer for ASCII to Integer conversion
@@ -113,8 +126,7 @@ section .text
 
 ; initial_setup
 ;   Loads configuration from a .env file (or -e) into BSS buffers.
-;   Populates: port, max_requests, document_root, index_file, server_name,
-;              errordoc_* paths, and sockaddr.
+;   Also populate other buffers with additional info. 
 ;   Exits with code 1 if -e was given but the file doesn't exist.
 ;   Exits with code 0 if the help was displayed (-h).
 initial_setup:
@@ -192,10 +204,16 @@ initial_setup:
     mov dword [max_age], eax
 
     ENV_DEFAULT env_path_buf, key_servedots, serve_dots_str, 5, default_servedots
-    call .is_servedot_true
+    BOOL_FLAG serve_dots_str, serve_dots
 
     ENV_DEFAULT env_path_buf, key_use_xri, use_xri_str, 5, default_use_xri
-    call .is_xri_true
+    BOOL_FLAG use_xri_str, use_xri
+
+    ENV_DEFAULT env_path_buf, key_use_chroot, use_chroot_str, 5, default_use_chroot
+    BOOL_FLAG use_chroot_str, use_chroot
+
+    ENV_DEFAULT env_path_buf, key_noperms, be_nobody_str, 5, default_noperms
+    BOOL_FLAG be_nobody_str, be_nobody
     
     ; open the log file
     ENV_DEFAULT env_path_buf, key_logfile, log_file_path, 129, default_logfile
@@ -227,32 +245,19 @@ initial_setup:
     BUILDPATH errordoc_401_path, document_root, errordoc_401
     BUILDPATH errordoc_400_path, document_root, errordoc_400
 
-    ret
+.check_user:
+    ; getuid()
+    mov rax, 102
+
+    syscall
+
+    mov [current_uid], eax
+    ret                     ; initial_setup return point
 
 .build_server_name:
     lea r14, [server_w_ver]
     AAPPEND r14, default_name
     AAPPEND r14, version
-    ret
-
-.is_servedot_true:
-    cmp dword [serve_dots_str], 0x65757274  ; "true"
-    je .set_servedot_true
-
-    ret
-
-.set_servedot_true:
-    mov byte [serve_dots], 1
-    ret
-
-.is_xri_true:
-    cmp dword [use_xri_str], 0x65757274  ; "true"
-    je .set_xri_true
-
-    ret
-
-.set_xri_true:
-    mov byte [use_xri], 1
     ret
 
 .open_logfile:

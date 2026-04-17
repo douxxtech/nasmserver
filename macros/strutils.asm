@@ -158,6 +158,21 @@
     pop rsi
 %endmacro
 
+; BOOL_FLAG str_buf, flag_buf
+;   Sets flag_buf to 1 if str_buf contains "true", leaves it untouched otherwise.
+;   Args:
+;     %1: buffer containing the string to check (e.g. serve_dots_str)
+;     %2: byte flag to set (e.g. serve_dots)
+;   Clobbers: nothing
+%macro BOOL_FLAG 2
+    cmp dword [%1], 0x65757274  ; "true"
+    jne %%done
+
+    mov byte [%2], 1
+
+%%done:
+%endmacro
+
 ; APPEND dest, src, length
 ;   Copies `length` bytes from src into dest, advancing dest.
 ;   Args:
