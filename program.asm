@@ -324,7 +324,6 @@ _start:
     je .forbidden
 
 .check_exists:
-
     ; check if the file exists before continuing
     lea rdi, [path]
 
