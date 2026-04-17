@@ -218,6 +218,32 @@ section .bss
     PRINTF 2, sysutils_newline, 1
 %endmacro
 
+; LOG_PORT
+;   Prints: "HH:MM:SS [INFO] Listening on <bind_addr>:<port>\n"
+;   Uses:
+;     bind_addr_str  null-terminated string containing the IPv4 address
+;     port           word containing the port number (host byte order)
+;     log_port_buf   buffer for integer-to-ASCII conversion
+;   Clobbers: rax, rbx, rdi, rsi, rdx, rcx, r9
+%macro LOG_PORT 0
+    ; this mess prints the port log
+    PRINT_TIMESTAMP
+
+    PRINT log_prefix_info, log_prefix_info_len
+    PRINT log_listening_on, log_listening_on_len
+
+    STRLEN bind_addr_str, r9
+    PRINT bind_addr_str, r9                        ; x.x.x.x 
+
+    PRINT log_two_dots, log_two_dots_len           ; ":"
+
+    ; port int to ascii
+    movzx rbx, word [port]
+
+    ITOA rbx, log_port_buf, r9
+    PRINTN log_port_buf, r9                        ; XXXX
+%endmacro
+
 ; LOG_REQUEST_CLFE
 ;   Prints a Combined Log Format Extended (CLFE) log line to stdout.
 ;   Also matches the default Apache HTTP Server log format.
