@@ -235,7 +235,7 @@ initial_setup:
 
     syscall
 
-    mov [current_uid], rax
+    mov [current_uid], eax
     ret                     ; initial_setup return point
 
 .build_server_name:
