@@ -123,6 +123,8 @@ Copy `env.example` to `.env` and edit as needed. All keys are optional and defau
 | `ERRORDOC_403` | *(empty)* | Same, for 403 |
 | `ERRORDOC_404` | *(empty)* | Same, for 404 |
 | `ERRORDOC_405` | *(empty)* | Same, for 405 |
+| `USE_CHROOT` | `true` | Chroot into `DOCUMENT_ROOT` at startup for filesystem isolation. Only applies when running as root |
+| `DROP_PRIVILEGES` | `true` | Drop to nobody (uid 65534) after startup. Only applies when running as root |
 
 If an `ERRORDOC_*` is left empty, the server sends headers only with no body for that error. Nonexistent errordoc files produce a startup warning but are not fatal.
 
