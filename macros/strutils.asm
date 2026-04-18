@@ -173,6 +173,21 @@
 %%done:
 %endmacro
 
+; CLEAR_BUFFER dest, length
+;   Fills `length` bytes at dest with 0.
+;   Args:
+;     %1: destination buffer address
+;     %2: number of bytes to clear
+;   Notes:
+;     Uses rep stosb for efficiency.
+;   Clobbers: rax, rdi, rcx
+%macro CLEAR_BUFFER 2
+    mov rdi, %1
+    mov rcx, %2
+    xor eax, eax
+    rep stosb
+%endmacro
+
 ; APPEND dest, src, length
 ;   Copies `length` bytes from src into dest, advancing dest.
 ;   Args:
