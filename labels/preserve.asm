@@ -1,5 +1,9 @@
 ; preserve.asm - Prepares the server environment
 
+section .bss
+    sigaction  resb 152  ; sigaction struct
+
+
 section .text
     global pre_serve
 
@@ -8,14 +12,17 @@ section .text
 ;   - Creates a socket and binds a port to it
 ;   - If running as root, chroots into document_root and resets it to ".".
 ;   - If running as root, sets its uid to nobody
+;   - Registers the signal handlers
 pre_serve:
     call .create_socket
-
     call .bind_port
 
     call .chroot
-
     call .im_nobody
+
+    call .sigchld_setup
+    call .sigterm_setup
+    call .sigint_setup
 
     ret           ; pre_serve return point
 
@@ -99,7 +106,7 @@ pre_serve:
     jmp .chroot_end
 
 .chroot_fail:
-    ; for the moment do nothing
+    ; for now do nothing
     ; we'll log in verbose when the feature will be there
     EXIT 69
 
@@ -127,12 +134,158 @@ pre_serve:
     jmp .nobody_end
 
 .nobody_fail:
-    ; for the moment do nothing
+    ; for now do nothing
     ; we'll log in verbose when the feature will be there
 
 .nobody_end:
     ret  ; .im_nobody return point
 
+.sig_restorer:
+    ; shared restorer trampoline for all signal handlers
+    ; the kernel wants SA_RESTORER to be set and sa_restorer to point here
+
+    ; rt_sigreturn()
+    mov rax, 15  ; rt_sigreturn
+    syscall      ; return point for .sig_restorer
+
+.sigchld_setup:
+    ; setups the SIGCHLD handler (child exits)
+
+    ; 0 the struct
+    lea rdi, [sigaction]
+    mov rcx, 152
+    xor al, al
+    rep stosb
+
+    lea rax, [.sigchld_handler]
+    mov [sigaction], rax                    ; sa_handler
+
+    mov qword [sigaction + 8], 0x14000000   ; sa_flags SA_RESTART | SA_RESTORER
+
+    lea rax, [.sig_restorer]
+    mov [sigaction + 16], rax               ; sa_restorer
+
+    ; rt_sigaction(signum, newact, oldact)
+    mov rax, 13
+    mov rdi, 17           ; SIGCHLD
+    lea rsi, [sigaction]
+    xor rdx, rdx
+    mov r10, 8            ; "sigsetsize"
+    syscall
+
+    cmp rax, 0
+    jl .sigchld_fail
+
+    jmp .sigchld_end
+
+.sigchld_fail:
+    ; for now do nothing
+    ; we'll log in verbose when the feature will be there
+
+.sigchld_end:
+    ret  ; .sigchld_setup return point
+
+.sigchld_handler:
+    ; reap zombie processes (same as _start.reap_loop)
+
+    ; wait4(pid, status, options, usage)
+    mov rax, 61
+    mov rdi, -1      ; any child
+    xor rsi, rsi
+    mov rdx, 1       ; WNOHANG
+    xor r10, r10
+    syscall
+
+    cmp rax, 0
+    jle .sigchld_ok  ; no child reaped, stop
+
+    dec word [process_count]
+    jmp .sigchld_handler
+
+.sigchld_ok:
+    ret  ; return point for .sigchld_handler (restorer handles rt_sigreturn)
+
+.sigterm_setup:
+    ; setups the SIGTERM handler
+
+    ; 0 the struct
+    lea rdi, [sigaction]
+    mov rcx, 152
+    xor al, al
+    rep stosb
+
+    lea rax, [.sigterm_handler]
+    mov [sigaction], rax                   ; sa_handler
+
+    mov qword [sigaction + 8], 0x04000000  ; sa_flag SA_RESTORER
+
+    lea rax, [.sig_restorer]
+    mov [sigaction + 16], rax              ; sa_restorer
+
+    ; rt_sigaction(signum, newact, oldact)
+    mov rax, 13
+    mov rdi, 15           ; SIGTERM
+    lea rsi, [sigaction]
+    xor rdx, rdx
+    mov r10, 8            ; "sigsetsize"
+    syscall
+
+    cmp rax, 0
+    jl .sigterm_fail
+
+    jmp .sigterm_end
+
+.sigterm_fail:
+    ; for now do nothing
+    ; we'll log in verbose when the feature will be there
+
+.sigterm_end:
+    ret  ; return point for .sigterm_setup
+
+.sigterm_handler:
+    mov byte [shutdown], 1
+    ret  ; return point for .sigterm_handler
+
+.sigint_setup:
+    ; setups the SIGINT handler
+
+    ; 0 the struct
+    lea rdi, [sigaction]
+    mov rcx, 152
+    xor al, al
+    rep stosb
+
+    lea rax, [.sigint_handler]
+    mov [sigaction], rax                   ; sa_handler
+
+    mov qword [sigaction + 8], 0x04000000  ; sa_flag SA_RESTORER
+
+    lea rax, [.sig_restorer]
+    mov [sigaction + 16], rax              ; sa_restorer
+
+    ; rt_sigaction(signum, newact, oldact)
+    mov rax, 13
+    mov rdi, 2            ; SIGINT
+    lea rsi, [sigaction]
+    xor rdx, rdx
+    mov r10, 8            ; "sigsetsize"
+    syscall
+
+    cmp rax, 0
+    jl .sigint_fail
+
+    jmp .sigint_end
+
+.sigint_fail:
+    ; for now do nothing
+    ; we'll log in verbose when the feature will be there
+
+.sigint_end:
+    ret  ; return point for .sigint_setup
+
+.sigint_handler:
+    mov byte [shutdown], 1
+    ret  ; return point for .sigint_handler
 
 .fail_socket:
     LOG_ERR log_fail_socket, log_fail_socket_len
