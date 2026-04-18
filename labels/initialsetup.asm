@@ -51,6 +51,9 @@ section .data
     key_noperms           db "DROP_PRIVILEGES", 0
     default_noperms       db "true", 0
 
+    key_loglevel          db "LOG_LEVEL", 0
+    default_loglevel      db "info", 0
+
     ; errordocs files, relatively to the document_root (empty = none)
     ; start them with a slash !
 
@@ -104,6 +107,8 @@ section .bss
     auth_realm         resb 129  ; HTTP 1.0 Basic Auth Realm
 
     ; logs
+    log_level_str      resb 6    ; "debug\0"
+    log_level          resb 1    ; 0 = none, 1 = normal, 2 = verbose
     log_file_path      resb 129  ; Path to access/error log
     log_file           resq 1    ; Log file descriptor (64-bit)
 
@@ -214,6 +219,10 @@ initial_setup:
 
     ENV_DEFAULT env_path_buf, key_noperms, be_nobody_str, 5, default_noperms
     BOOL_FLAG be_nobody_str, be_nobody
+
+    ; process the log level
+    ENV_DEFAULT env_path_buf, key_loglevel, log_level_str, 6, default_loglevel
+    call .parse_log_level
     
     ; open the log file
     ENV_DEFAULT env_path_buf, key_logfile, log_file_path, 129, default_logfile
@@ -258,7 +267,7 @@ initial_setup:
     lea r14, [server_w_ver]
     AAPPEND r14, default_name
     AAPPEND r14, version
-    ret
+    ret  ; .build_server_name return point
 
 .open_logfile:
     cmp byte [log_file_path], 0
@@ -271,11 +280,44 @@ initial_setup:
 
     mov qword [log_file], rax
 
-    ret
+    jmp .log_file_end
 
 .no_log_file:
     mov qword [log_file], 1  ; no log file = stdout
+
+.log_file_end:
+    ret  ; open_logfile len
+
+.parse_log_level:
+    lea rax, [log_level_str]
+
+    ; "debug"
+    cmp dword [rax], 'debu'
+    jne .check_none
+
+    cmp byte [rax+4], 'g'
+    jne .check_none
+
+    mov byte [log_level], 2
+
+    jmp .log_level_end
+
+.check_none:
+    ; "none"
+    cmp dword [rax], 'none'
+    jne .check_info
+
+    mov byte [log_level], 0
+    
+    jmp .log_level_end
+
+.check_info:
+    ; "info" or anything unrecognized = 0
+    mov byte [log_level], 1
     ret
+
+.log_level_end:
+    ret  ; .parse_log_level return point
 
 .failed_read_file:
     LOG_ERR log_fail_read_env, log_fail_read_env_len
