@@ -258,7 +258,7 @@ section .bss
 %macro LOG_DEBUG 2
     ; check if we should log or not
     cmp byte [log_level], 2  ; log lvl none = skip
-    je %%end
+    jne %%end
 
 %%log:
     PRINT_TIMESTAMP
