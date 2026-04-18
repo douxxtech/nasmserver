@@ -30,6 +30,8 @@ section .data
     log_prefix_err                  db "[ERROR] ", 0
     log_prefix_err_len              equ $ - log_prefix_err - 1
 
+    log_prefix_dbg                  db "* ", 0
+    log_prefix_dbg_len              equ $ - log_prefix_dbg - 1
 
     ; startup banner
     log_started_nasmserver          db "Started the NASMServer static files HTTP server.", 0xa, 0
@@ -241,6 +243,26 @@ section .bss
 %%log:
     PRINT_TIMESTAMP
     PRINTF 2, log_prefix_err, log_prefix_err_len
+    PRINTF 2, %1, %2
+    PRINTF 2, sysutils_newline, 1
+
+%%end:
+%endmacro
+
+; LOG_DEBUG msg, len
+;   Prints: "HH:MM:SS [ERROR] <msg>\n" to STDERR
+;   Args:
+;     %1: message buffer
+;     %2: message length
+;   Clobbers: rax, rdi, rsi, rdx, rcx
+%macro LOG_DEBUG 2
+    ; check if we should log or not
+    cmp byte [log_level], 2  ; log lvl none = skip
+    je %%end
+
+%%log:
+    PRINT_TIMESTAMP
+    PRINTF 2, log_prefix_dbg, log_prefix_dbg_len
     PRINTF 2, %1, %2
     PRINTF 2, sysutils_newline, 1
 
