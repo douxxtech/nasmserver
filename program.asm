@@ -57,6 +57,9 @@ section .data
 
 
 section .bss
+    ; system
+    process_count     resw 1     ; current processes count
+
     ; network
     client_addr       resb 16
     client_ip_str     resb 16    ; "255.255.255.255\0"
@@ -82,7 +85,6 @@ section .bss
     ; misc
     last_status       resw 1     ; for logs
     content_length_b  resb 20
-    process_count     resw 1     ; current processes count
     log_port_buf      resb 8     ; "65535\n\0" worst case
     header_time       resb 32    ; "Mon, 01 Jan 2000 00:00:00 GMT\0" + padding
     request_type      resb 1     ; GET = 0, HEAD = 1
@@ -90,6 +92,7 @@ section .bss
 
 section .text
     global _start
+    global .reap_loop
 
 
 ; consistent register usage, after startup (persistent across the request handling):
@@ -695,8 +698,8 @@ _start:
     mov rsi, 1      ; SHUT_WR
     syscall
 
+.drain:
     ; drain remaining input so TCP can close cleanly
-.__drain:
 
     ; read(fd, buffer, count)
     mov rax, 0
@@ -706,7 +709,7 @@ _start:
     syscall
 
     cmp rax, 0
-    jg .__drain                    ; keep reading until eof / err
+    jg .drain                    ; keep reading until eof / err
 
     ; close(fd)
     mov rax, 3
@@ -733,8 +736,8 @@ _start:
     jmp .wait
 
 .reap_loop:
-
     ; reap zombie processes
+    
     ; wait4(pid, status, options, usage)
     mov rax, 61
     mov rdi, -1     ; any child
@@ -750,7 +753,7 @@ _start:
     jmp .reap_loop
 
 .reap_done:
-    ret
+    ret  ; return point for .reap_loop
 
 .log_request:
     ; parse other headers for the logs
@@ -758,19 +761,19 @@ _start:
     PARSE_REFERER_HEADER request, 8192, referer,    1024
 
     cmp byte [use_xri], 1
-    jne .__log_req            ; check if we need to use the X-Real-IP header
+    jne .log_req            ; check if we need to use the X-Real-IP header
 
     PARSE_XRI_HEADER request, 8192, real_ip, 39
     
     cmp byte [real_ip], 0
-    jne .__log_req
+    jne .log_req
 
     mov rsi, client_ip_str
     mov rdi, real_ip
     mov rcx, 16
     rep movsb
 
-.__log_req:
+.log_req:
     mov r8, qword [log_file]
     LOG_REQUEST_CLFE r8
 
