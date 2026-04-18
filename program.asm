@@ -59,6 +59,7 @@ section .data
 section .bss
     ; system
     process_count     resw 1     ; current processes count
+    shutdown          resb 1     ; if a shutdown was requested by a signal
 
     ; network
     client_addr       resb 16
@@ -79,7 +80,7 @@ section .bss
     password          resb 129
 
     ; client http headers
-    user_agent        resb 1025 ; 1024 + "\0"
+    user_agent        resb 1025  ; 1024 + "\0"
     referer           resb 1025
 
     ; misc
@@ -135,6 +136,12 @@ _start:
     mov rsi, client_addr
     mov rdx, client_addr_len
     syscall
+
+    cmp byte [shutdown], 1
+    je .shutdown
+
+    cmp rax, -4
+    je .wait                  ; -4 = EINTR, stopped by signal, just restart
 
     cmp rax, 0
     jl .fail_accept
@@ -778,6 +785,20 @@ _start:
     LOG_REQUEST_CLFE r8
 
     ret
+
+
+.shutdown:
+    LOG_INFO log_stopping, log_stopping_len
+
+    ; wait for all children to finish
+    call .reap_loop
+
+    ; close the server socket
+    mov rax, 3
+    mov rdi, r15
+    syscall
+
+    EXIT 0
 
 .fail_accept:
     LOG_ERR log_fail_accept, log_fail_accept_len

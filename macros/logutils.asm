@@ -120,9 +120,12 @@ section .data
     log_status_405_len              equ $ - log_status_405 - 1
 
 
-    ; runtime warnings
+    ; runtime logs
     log_too_many_concurrent         db "Rejected request: too many concurrent requests", 0
     log_too_many_concurrent_len     equ $ - log_too_many_concurrent - 1
+
+    log_stopping                    db "Stopping...", 0
+    log_stopping_len                equ $ - log_stopping - 1
 
 
     ; CLI / arguments / help
