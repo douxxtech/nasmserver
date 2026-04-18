@@ -104,14 +104,17 @@ section .text
 ;   r11 = file fd (when serving a file)
 
 _start:
-    mov r15, [rsp]       ; argc
-    call parse_flags     ; sets flag_* bytes, strips flags, etc. From labels/flagparser.asm
+    mov r15, [rsp]           ; argc
+    call parse_flags         ; sets flag_* bytes, strips flags, etc. From labels/flagparser.asm
 
-    call initial_setup   ; from labels/initialsetup.asm
+    call initial_setup       ; from labels/initialsetup.asm
 
-    call startup_checks  ; from labels/startupchecks.asm
+    call startup_checks      ; from labels/startupchecks.asm
 
     call pre_serve
+
+    cmp byte [log_level], 0
+    je .start_server         ; skip the log if log lvl is none
 
     LF
     PRINTN log_started_nasmserver, log_started_nasmserver_len
