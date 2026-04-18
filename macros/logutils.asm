@@ -124,7 +124,7 @@ section .data
     log_too_many_concurrent         db "Rejected request: too many concurrent requests", 0
     log_too_many_concurrent_len     equ $ - log_too_many_concurrent - 1
 
-    log_stopping                    db "Stopping...", 0
+    log_stopping                    db "Stopping... (signal received)", 0
     log_stopping_len                equ $ - log_stopping - 1
 
 
