@@ -1,5 +1,9 @@
 ; preserve.asm - Prepares the server environment
 
+section .bss
+    sigaction  resb 152  ; sigaction struct
+
+
 section .text
     global pre_serve
 
@@ -8,6 +12,7 @@ section .text
 ;   - Creates a socket and binds a port to it
 ;   - If running as root, chroots into document_root and resets it to ".".
 ;   - If running as root, sets its uid to nobody
+;   - Registers the signal handlers
 pre_serve:
     call .create_socket
 
@@ -16,6 +21,8 @@ pre_serve:
     call .chroot
 
     call .im_nobody
+
+    call .sigchld_setup
 
     ret           ; pre_serve return point
 
@@ -99,7 +106,7 @@ pre_serve:
     jmp .chroot_end
 
 .chroot_fail:
-    ; for the moment do nothing
+    ; for now do nothing
     ; we'll log in verbose when the feature will be there
     EXIT 69
 
@@ -127,12 +134,68 @@ pre_serve:
     jmp .nobody_end
 
 .nobody_fail:
-    ; for the moment do nothing
+    ; for now do nothing
     ; we'll log in verbose when the feature will be there
 
 .nobody_end:
     ret  ; .im_nobody return point
 
+.sigchld_setup:
+    ; setups the SIGCHLD handler (child exits)
+
+    ; 0 the reg
+    lea rdi, [sigaction]
+    mov rcx, 152
+    xor al, al
+    rep stosb
+
+    ; point it the the label
+    mov qword [sigaction + 8], 0x4000000 | 0x10000000  ; SA_RESTORER | SA_RESTART (claude)
+
+    lea rax, [.sigchld_handler]
+    mov [sigaction + 16], rax
+
+    ; rt_sigaction(signum, newact, oldact)
+    mov rax, 13
+    mov rdi, 17           ; SIGCHLD
+    lea rsi, [sigaction]
+    xor rdx, rdx
+    mov r10, 8            ; "sigsetsize"
+    syscall
+
+    cmp rax, 0
+    jl .sigchld_fail
+
+    jmp .sigchld_end
+
+.sigchld_fail:
+    ; for now do nothing
+    ; we'll log in verbose when the feature will be there
+
+.sigchld_end:
+    ret  ; .sigchld_setup return point
+
+.sigchld_handler:
+    ; reap zombie processes (same as _start.reap_loop)
+    
+    ; wait4(pid, status, options, usage)
+    mov rax, 61
+    mov rdi, -1      ; any child
+    xor rsi, rsi
+    mov rdx, 1       ; WNOHANG
+    xor r10, r10
+    syscall
+
+    cmp rax, 0
+    jle .sigchld_ok  ; no child reaped, stop
+
+    dec word [process_count]
+    jmp .sigchld_handler
+
+.sigchld_ok:
+    ; rt_sigreturn()
+    mov rax, 15
+    syscall      ; return point for .sigchld_handler
 
 .fail_socket:
     LOG_ERR log_fail_socket, log_fail_socket_len
