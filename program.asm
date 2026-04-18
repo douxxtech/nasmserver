@@ -786,7 +786,6 @@ _start:
 
     ret
 
-
 .shutdown:
     LOG_INFO log_stopping, log_stopping_len
 
