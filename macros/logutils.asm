@@ -246,7 +246,6 @@ section .bss
     PRINTN %1, %2
 
 %%end:
-    CLEAR_BUFFER log_buffer, 2048
 %endmacro
 
 ; LOG_WARNING msg, len
@@ -266,7 +265,6 @@ section .bss
     PRINTN %1, %2
 
 %%end:
-    CLEAR_BUFFER log_buffer, 2048
 %endmacro
 
 ; LOG_ERR msg, len
@@ -287,7 +285,6 @@ section .bss
     PRINTF 2, sysutils_newline, 1
 
 %%end:
-    CLEAR_BUFFER log_buffer, 2048
 %endmacro
 
 ; LOG_DEBUG msg, len
@@ -307,7 +304,6 @@ section .bss
     PRINTF 2, sysutils_newline, 1
 
 %%end:
-    CLEAR_BUFFER log_buffer, 2048
 %endmacro
 
 ; LOG_PORT
@@ -341,7 +337,6 @@ section .bss
     PRINTN log_port_buf, r9                        ; XXXX
 
 %%end:
-    CLEAR_BUFFER log_buffer, 2048
 %endmacro
 
 ; LOG_REQUEST_CLFE
@@ -529,5 +524,11 @@ section .bss
     PRINTF %1, sysutils_newline, 1
 
 %%end:
+%endmacro
+
+; CLB
+;   Clears the log buffer
+;   Clobbers: rax, rdi, rcx
+%macro CLB 0
     CLEAR_BUFFER log_buffer, 2048
 %endmacro
