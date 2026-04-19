@@ -37,7 +37,7 @@ I started learning NASM on a Monday afternoon, because I was bored in my NoSQL c
 
 ## Usage (from a release)
 
-Each release ships prebuilt bundles for different architectures. The bundles contain everything you need to run NASMServer, including the entry script `nasmserver`, an example config file `env.example`, and a default web directory `www/`.
+Each release ships prebuilt bundles for different architectures. The bundles contain everything you need to run NASMServer, including the entry script `nasmserver`, an example config file `.env.example`, and a default web directory `www/`.
 
 ```bash
 # 1. Download and extract the release
@@ -51,7 +51,7 @@ cd nasmserver
 cat instructions.txt
 
 # 4. Copy the example config (optional)
-cp env.example .env
+cp .env.example .env
 
 # 5. Run it (defaults to port 8080, document root: ./www or current directory)
 ./nasmserver
@@ -101,7 +101,7 @@ The entry point is `program.asm`. Macros and utilities live in `macros/`, labels
 
 ## Configuration
 
-Copy `env.example` to `.env` and edit as needed. All keys are optional and defaults apply if a key is missing or the file is not found.
+Copy `.env.example` to `.env` and edit as needed. All keys are optional and defaults apply if a key is missing or the file is not found.
 
 | Key | Default | Description |
 |---|---|---|

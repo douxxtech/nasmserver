@@ -19,7 +19,7 @@ chmod +x buildasm.sh
 cp program "$BUNDLE_DIR/nasmserver-bin"
 
 # move the base things
-cp env.example "$BUNDLE_DIR/env.example"
+cp .env.example "$BUNDLE_DIR/.env.example"
 cp -r www "$BUNDLE_DIR/www"
 cp .github/bundle-files/"$ARCH"/* "$BUNDLE_DIR/"
 

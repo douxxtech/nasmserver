@@ -11,7 +11,7 @@ CONTENTS
   installer             - optional setup/installation script
   libs/                 - bundled runtime libraries
   www/                  - default web directory
-  env.example           - example configuration file
+  .env.example          - example configuration file
   instructions.txt      - this file
 
 IMPORTANT: do not move, delete, or rename any of the files above. The launcher
@@ -22,7 +22,7 @@ USAGE
 1. Extract the bundle to a directory of your choice
 
 2. Copy the example config:
-     cp env.example .env
+     cp .env.example .env
 
 3. Run it:
      ./nasmserver
