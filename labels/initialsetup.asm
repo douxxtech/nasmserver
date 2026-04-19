@@ -180,6 +180,17 @@ initial_setup:
     test al, al
     jnz .copy_default
 
+.get_uid:
+    ; getuid()
+    mov rax, 102
+    syscall
+    mov [current_uid], eax
+
+.get_pid:
+    GET_PID
+    mov r10, rax
+    ITOA r10, current_pid_str, rcx
+
 .load_env:
     ; load all config from .env (or fall back to defaults)
 
@@ -255,18 +266,7 @@ initial_setup:
     BUILDPATH errordoc_401_path, document_root, errordoc_401
     BUILDPATH errordoc_400_path, document_root, errordoc_400
 
-.get_user:
-    ; getuid()
-    mov rax, 102
-
-    syscall
-
-    mov [current_uid], eax
-
-.get_pid:
-    GET_PID
-    mov r10, rax
-    ITOA r10, current_pid_str, rcx
+    call dbg_startup_infos
 
     ret                             ; initial_setup return point
 

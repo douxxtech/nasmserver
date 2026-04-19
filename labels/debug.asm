@@ -288,5 +288,215 @@ warn_sighandler_fail:
 
     ret                                    ; warn_sighandler_fail return point
 
+dbg_startup_infos:
+    cmp byte [log_level], 2
+    jne dbg_skip
+
+.pid_uid:
+    CLB
+
+    mov r10d, dword [current_uid]       ; r10d auto-0-extends to the full r10
+    ITOA r10, itoa_buf, rcx
+
+    lea r9, [log_buffer]
+
+    AAPPEND r9, log_process_started_p1
+    AAPPEND r9, itoa_buf
+    AAPPEND r9, log_process_started_p2
+    AAPPEND r9, current_pid_str
+
+    lea rcx, [log_buffer]
+    sub r9, rcx
+
+    LOG_DEBUG log_buffer, r9
+
+.config:
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_header
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_docroot
+    AAPPEND r9, document_root
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_index
+    AAPPEND r9, index_file
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_bindaddr
+    AAPPEND r9, bind_addr_str
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_port
+    movzx r10, word [port]
+    ITOA r10, itoa_buf, rcx
+    AAPPEND r9, itoa_buf
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_maxreqs
+    movzx r10, word [max_requests]
+    ITOA r10, itoa_buf, rcx
+    AAPPEND r9, itoa_buf
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_maxage
+    mov r10d, dword [max_age]
+    ITOA r10, itoa_buf, rcx
+    AAPPEND r9, itoa_buf
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_servername
+    AAPPEND r9, server_w_ver
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_logfile
+    AAPPEND r9, log_file_path
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_loglevel
+    AAPPEND r9, log_level_str
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_servedots
+    AAPPEND r9, serve_dots_str
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_usexri
+    AAPPEND r9, use_xri_str
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_usechroot
+    AAPPEND r9, use_chroot_str
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_noperms
+    AAPPEND r9, be_nobody_str
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_authrealm
+    AAPPEND r9, auth_realm
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_authuser
+    AAPPEND r9, auth_username
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    ; auth_password: show ****** if set, empty if not
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_authpass
+    cmp byte [auth_password], 0
+    je .config_pass_empty
+    AAPPEND r9, log_config_authpass_set
+.config_pass_empty:
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_err400
+    AAPPEND r9, errordoc_400_path
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_err401
+    AAPPEND r9, errordoc_401_path
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_err403
+    AAPPEND r9, errordoc_403_path
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_err404
+    AAPPEND r9, errordoc_404_path
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
+    AAPPEND r9, log_config_err405
+    AAPPEND r9, errordoc_405_path
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    LOG_DEBUG log_buffer, r9
+
+    ret                            ; dbg_startup_infos return point
+
 dbg_skip:
     ret  ; skip point if debug mode isn't enabled

@@ -176,6 +176,33 @@ section .data
     log_sighanlder_sigint           db "SIGINT", 0
     log_sighanlder_sigchld          db "SIGCHLD", 0
 
+    log_process_started_p1          db "Main process started by UID ", 0
+    log_process_started_p2          db " with PID ", 0
+
+    log_config_header               db "Loaded config:", 0
+    log_config_docroot              db "  DOCUMENT_ROOT:    ", 0
+    log_config_index                db "  INDEX_FILE:       ", 0
+    log_config_bindaddr             db "  BIND_ADDRESS:     ", 0
+    log_config_port                 db "  PORT:             ", 0
+    log_config_maxreqs              db "  MAX_REQUESTS:     ", 0
+    log_config_maxage               db "  MAX_AGE:          ", 0
+    log_config_servername           db "  SERVER_NAME:      ", 0
+    log_config_logfile              db "  LOG_FILE:         ", 0
+    log_config_loglevel             db "  LOG_LEVEL:        ", 0
+    log_config_servedots            db "  SERVE_DOTS:       ", 0
+    log_config_usexri               db "  USE_X_REAL_IP:    ", 0
+    log_config_usechroot            db "  USE_CHROOT:       ", 0
+    log_config_noperms              db "  DROP_PRIVILEGES:  ", 0
+    log_config_authrealm            db "  AUTH_REALM:       ", 0
+    log_config_authuser             db "  AUTH_USER:        ", 0
+    log_config_authpass             db "  AUTH_PASSWORD:    ", 0
+    log_config_authpass_set         db "********", 0       ; shown if password is set
+    log_config_err400               db "  ERRORDOC_400:     ", 0
+    log_config_err401               db "  ERRORDOC_401:     ", 0
+    log_config_err403               db "  ERRORDOC_403:     ", 0
+    log_config_err404               db "  ERRORDOC_404:     ", 0
+    log_config_err405               db "  ERRORDOC_405:     ", 0
+
     ; CLI / arguments / help
     log_arg_not_recognized_p1       db "Argument '", 0
     log_arg_not_recognized_p1_len   equ $ - log_arg_not_recognized_p1 - 1
@@ -204,7 +231,7 @@ section .bss
 
     status_buf  resb 20    ; current ITOA scratch-buffer requirement
 
-    log_buffer  resb 2048  ; buffer for a variety of logs
+    log_buffer  resb 4096  ; buffer for a variety of logs
 
 ; PRINT_TIMESTAMP
 ;   Prints "HH:MM:SS " to stdout via clock_gettime + localtime_r + strftime.
