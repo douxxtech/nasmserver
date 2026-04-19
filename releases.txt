@@ -14,6 +14,18 @@
 # - Release description: detailed information about the release
 # - =--- END ---=: marks the end of the release 
 
+=--- v1.13 ---=
+### What changed
+- Added `LOG_LEVEL` config option to control log verbosity (`none`, `info`, `debug`). Default: `info`
+- Added `USE_CHROOT` config option to jail the server inside `DOCUMENT_ROOT` at startup. Only applies when running as root. Default: `true`
+- Added `DROP_PRIVILEGES` config option to drop to the `nobody` user after startup. Only applies when running as root. Default: `true`
+- In `debug` mode, the server now logs startup info (UID, PID, full config dump), child process lifecycle, resolved paths and HTTP methods, dotfile blocks, response status codes and byte counts, signal handler registration results, and chroot/privilege-drop outcomes
+- Debug log lines are prefixed with `* <PID>: <message>` to make per-process traces easy to follow
+- When `LOG_LEVEL` is set to `none`, request logs are still written to `LOG_FILE` if one is configured
+- Request log lines are now assembled into a buffer before being written, reducing log corruption under concurrent load
+- Fixed minor issues and probably created major ones
+=--- END ---=
+
 =--- v1.12 ---=
 ### What changed
 - Headers are lowercased before processing, so proxies or clients sending non-standard casing won't break features like `X-Real-IP` or `If-Modified-Since`.

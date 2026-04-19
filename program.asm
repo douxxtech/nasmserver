@@ -18,7 +18,7 @@ extern inet_ntop ; to process the client IP address
 
 section .data
 
-    version db "1.12", 0
+    version db "1.13", 0
 
     ; socket setup
     sockaddr:
