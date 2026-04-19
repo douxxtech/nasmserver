@@ -72,6 +72,7 @@ section .data
 section .bss
     ; system
     current_uid        resd 1    ; Storing the current uid to check for root
+    current_pid_str    resb 20   ; the current pid, as a string
     use_chroot_str     resb 5    ; Buffer for "true\0"
     use_chroot         resb 1    ; Toggle for chroot-ing
     be_nobody_str      resb 5    ; Buffer for "true\0"

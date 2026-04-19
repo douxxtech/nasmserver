@@ -61,7 +61,6 @@ section .bss
     ; system
     process_count     resw 1     ; current processes count
     shutdown          resb 1     ; if a shutdown was requested by a signal
-    current_pid_str   resb 20    ; the current pid, as a string
 
     ; network
     client_addr       resb 16
@@ -196,6 +195,11 @@ _start:
     mov rax, 3
     mov rdi, r15
     syscall
+
+    ; updating the PID
+    GET_PID
+    mov r10, rax
+    ITOA r10, current_pid_str, rcx
 
     movzx eax, byte [rsp + 4]     ; first octet
     movzx ebx, byte [rsp + 5]     ; second

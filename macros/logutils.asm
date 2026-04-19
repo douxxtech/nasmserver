@@ -310,6 +310,11 @@ section .bss
 
 %%log:
     PRINTF 2, log_prefix_dbg, log_prefix_dbg_len
+
+    STRLEN current_pid_str, rcx
+    PRINTF 2, current_pid_str, rcx
+    PRINTF 2, log_two_dots, log_two_dots_len
+    PRINTF 2, log_space, log_space_len
     PRINTF 2, %1, %2
     PRINTF 2, sysutils_newline, 1
 
