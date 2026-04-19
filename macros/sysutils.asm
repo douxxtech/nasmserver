@@ -113,6 +113,13 @@ section .data
     pop rax
 %endmacro
 
+; LF
+;   Returns the current process id into rax.
+;   Clobbers: rax
+%macro GET_PID 0
+    mov rax, 39
+    syscall
+%endmacro
 
 ; GET_ARG index, out_reg
 ;   Gets a command-line argument by 1-based index.

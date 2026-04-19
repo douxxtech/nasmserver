@@ -1,4 +1,4 @@
-; debug.asm - Debug logs labels
+; debug.asm - Debug logs labels, and some warnings too
 
 section .text
     global dbg_new_child
@@ -10,6 +10,8 @@ section .text
     global dbg_process_reaped
     global dbg_chroot_success
     global warn_chroot_fail
+    global dbg_sighandler_success
+    global warn_sighandler_fail
 
 dbg_new_child:
     cmp byte [log_level], 2
@@ -17,10 +19,7 @@ dbg_new_child:
 
     CLB
 
-    ; getpid()
-    mov rax, 39
-    syscall
-
+    GET_PID
     mov r10, rax
     ITOA r10, current_pid_str, rcx
 
@@ -197,6 +196,97 @@ warn_chroot_fail:                     ; yea thats a warning but meh
     LOG_WARNING log_buffer, r9
 
     ret                               ; warn_chroot_fail return point
+
+dbg_sighandler_success:
+    cmp byte [log_level], 0
+    je dbg_skip
+
+    mov r10, rax             ; rax content: 17 = sigchld, 15 = sigterm, 2 = sigint
+
+    CLB
+
+    lea r9, [log_buffer]
+
+    AAPPEND r9, log_success_sighandler_p1
+
+    cmp r10, 17
+    je .sigchld
+
+    cmp r10, 15
+    je .sigterm
+
+    cmp r10, 2
+    je .sigint
+
+    je dbg_skip              ; if its something unexpected, just skip
+
+.sigchld:
+    AAPPEND r9, log_sighanlder_sigchld
+    jmp .end
+
+.sigterm:
+    AAPPEND r9, log_sighanlder_sigterm
+    jmp .end
+
+.sigint:
+    AAPPEND r9, log_sighanlder_sigint
+    jmp .end
+
+.end:
+    AAPPEND r9, log_success_sighandler_p2
+
+    lea rcx, [log_buffer]
+    sub r9, rcx
+
+    LOG_DEBUG log_buffer, r9
+
+    ret                                    ; dbg_sighandler_success return point
+
+
+warn_sighandler_fail:
+    cmp byte [log_level], 0
+    je dbg_skip
+
+    mov r10, rax             ; rax content: 17 = sigchld, 15 = sigterm, 2 = sigint
+
+    CLB
+
+    lea r9, [log_buffer]
+
+    AAPPEND r9, log_fail_sighandler_p1
+
+    cmp r10, 17
+    je .sigchld
+
+    cmp r10, 15
+    je .sigterm
+
+    cmp r10, 2
+    je .sigint
+
+    je dbg_skip              ; if its something unexpected, just skip
+
+.sigchld:
+    AAPPEND r9, log_sighanlder_sigchld
+    jmp .end
+
+.sigterm:
+    AAPPEND r9, log_sighanlder_sigterm
+    jmp .end
+
+.sigint:
+    AAPPEND r9, log_sighanlder_sigint
+    jmp .end
+
+.end:
+    AAPPEND r9, log_fail_sighandler_p2
+
+    lea rcx, [log_buffer]
+    sub r9, rcx
+
+    LOG_WARNING log_buffer, r9
+
+    ret                                    ; warn_sighandler_fail return point
 
 dbg_skip:
     ret  ; skip point if debug mode isn't enabled

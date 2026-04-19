@@ -254,14 +254,20 @@ initial_setup:
     BUILDPATH errordoc_401_path, document_root, errordoc_401
     BUILDPATH errordoc_400_path, document_root, errordoc_400
 
-.check_user:
+.get_user:
     ; getuid()
     mov rax, 102
 
     syscall
 
     mov [current_uid], eax
-    ret                     ; initial_setup return point
+
+.get_pid:
+    GET_PID
+    mov r10, rax
+    ITOA r10, current_pid_str, rcx
+
+    ret                             ; initial_setup return point
 
 .build_server_name:
     lea r14, [server_w_ver]

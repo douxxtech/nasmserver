@@ -176,14 +176,18 @@ pre_serve:
     mov r10, 8            ; "sigsetsize"
     syscall
 
-    cmp rax, 0
+    mov rdi, rax
+    mov rax, 17           ; for warn / debug logs
+
+    cmp rdi, 0
     jl .sigchld_fail
+
+    call dbg_sighandler_success
 
     jmp .sigchld_end
 
 .sigchld_fail:
-    ; for now do nothing
-    ; we'll log in verbose when the feature will be there
+    call warn_sighandler_fail
 
 .sigchld_end:
     ret  ; .sigchld_setup return point
@@ -235,14 +239,18 @@ pre_serve:
     mov r10, 8            ; "sigsetsize"
     syscall
 
-    cmp rax, 0
+    mov rdi, rax
+    mov rax, 15           ; for warn / debug logs
+
+    cmp rdi, 0
     jl .sigterm_fail
+
+    call dbg_sighandler_success
 
     jmp .sigterm_end
 
 .sigterm_fail:
-    ; for now do nothing
-    ; we'll log in verbose when the feature will be there
+    call warn_sighandler_fail
 
 .sigterm_end:
     ret  ; return point for .sigterm_setup
@@ -276,14 +284,18 @@ pre_serve:
     mov r10, 8            ; "sigsetsize"
     syscall
 
-    cmp rax, 0
+    mov rdi, rax
+    mov rax, 2            ; for warn / debug logs
+
+    cmp rdi, 0
     jl .sigint_fail
+
+    call dbg_sighandler_success
 
     jmp .sigint_end
 
 .sigint_fail:
-    ; for now do nothing
-    ; we'll log in verbose when the feature will be there
+    call warn_sighandler_fail
 
 .sigint_end:
     ret  ; return point for .sigint_setup

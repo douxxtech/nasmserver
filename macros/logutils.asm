@@ -166,6 +166,16 @@ section .data
     log_nobody_succeeded            db "Successfully dropped privileges to nobody", 0
     log_nobody_succeeded_len        equ $ - log_nobody_succeeded - 1
 
+    log_success_sighandler_p1       db "Successfully registered the ", 0
+    log_success_sighandler_p2       db " signal handler", 0
+
+    log_fail_sighandler_p1          db "Failed to register the ", 0
+    log_fail_sighandler_p2          db ", continuing anyways...", 0
+
+    log_sighanlder_sigterm          db "SIGTERM", 0
+    log_sighanlder_sigint           db "SIGINT", 0
+    log_sighanlder_sigchld          db "SIGCHLD", 0
+
     ; CLI / arguments / help
     log_arg_not_recognized_p1       db "Argument '", 0
     log_arg_not_recognized_p1_len   equ $ - log_arg_not_recognized_p1 - 1
