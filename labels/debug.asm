@@ -15,6 +15,8 @@ dbg_new_child:
     cmp byte [log_level], 2
     jne dbg_skip
 
+    CLB
+
     ; getpid()
     mov rax, 39
     syscall
@@ -39,6 +41,8 @@ dbg_child_exit:
     cmp byte [log_level], 2
     jne dbg_skip
 
+    CLB
+
     lea r9, [log_buffer]
     AAPPEND r9, log_child_exit_p1
     AAPPEND r9, current_pid_str
@@ -55,6 +59,8 @@ dbg_child_exit:
 dbg_path_resolved:
     cmp byte [log_level], 2
     jne dbg_skip
+
+    CLB
 
     lea r9, [log_buffer]
     AAPPEND r9, log_path_resolved
@@ -73,6 +79,8 @@ dbg_dotfile_blocked:
     cmp byte [log_level], 2
     jne dbg_skip
 
+    CLB
+
     lea r9, [log_buffer]
     AAPPEND r9, log_dotfile_blocked
 
@@ -89,6 +97,8 @@ dbg_dotfile_blocked:
 dbg_status_code:
     cmp byte [log_level], 2
     jne dbg_skip
+
+    CLB
 
     mov r10, rdi
     push rdi                          ; we need to save rdi since .write_header needs it
@@ -111,6 +121,8 @@ dbg_bytes_sent:
     cmp byte [log_level], 2
     jne dbg_skip
 
+    CLB
+
     mov r10, rax
     ITOA r10, itoa_buf, rcx
 
@@ -131,6 +143,8 @@ dbg_process_reaped:
     cmp byte [log_level], 2
     jne dbg_skip
 
+    CLB
+
     movzx r10, word [process_count]
     ITOA r10, itoa_buf, rcx
 
@@ -150,6 +164,8 @@ dbg_chroot_success:
     cmp byte [log_level], 2
     jne dbg_skip
 
+    CLB
+
     lea r9, [log_buffer]
 
     AAPPEND r9, log_chroot_succeeded
@@ -165,6 +181,8 @@ dbg_chroot_success:
 warn_chroot_fail:                     ; yea thats a warning but meh
     cmp byte [log_level], 0
     je dbg_skip
+
+    CLB
 
     lea r9, [log_buffer]
 
