@@ -18,6 +18,9 @@ section .data
     log_two_dots                    db ":", 0
     log_two_dots_len                equ $ - log_two_dots - 1
 
+    log_slash                       db "/", 0
+    log_slash_len                   equ $ - log_slash - 1
+
 
     ; log level prefixes
 

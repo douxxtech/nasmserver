@@ -153,6 +153,12 @@ dbg_process_reaped:
     AAPPEND r9, log_process_reaped
     AAPPEND r9, itoa_buf
 
+    movzx r10, word [max_requests]
+    ITOA r10, itoa_buf, rcx
+
+    AAPPEND r9, log_slash
+    AAPPEND r9, itoa_buf
+
     lea rcx, [log_buffer]
     sub r9, rcx
 
