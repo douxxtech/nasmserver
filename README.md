@@ -132,7 +132,6 @@ If an `ERRORDOC_*` is left empty, the server sends headers only with no body for
 ## Dev notes
 
 - The server uses `fork()` per connection, so no threads, no event loop. Each child handles exactly one request, then exits.
-- Zombie reaping happens at the top of the `accept()` loop, so zombies linger until the next incoming connection.
 - Concurrent connections are capped by `MAX_REQUESTS`. If the limit is hit, the connection is dropped and a warning is logged.
 - The request buffer is 8 KB. Requests larger than that are truncated.
 - Path traversal (`..`) is blocked in the path parser. Dotfile access is blocked by default unless `SERVE_DOTS=true`.
