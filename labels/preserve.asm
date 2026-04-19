@@ -85,16 +85,19 @@ pre_serve:
     lea rdi, document_root
     syscall
 
-    ; set the docroot to '.' (/)
-    mov word [document_root], 0x002e  ; ".\0" (reset before chroot since we're already inside)
-
     ; chroot(filename)
     mov rax, 161
-    lea rdi, document_root
+    lea rdi, default_docroot  ; "."
     syscall
 
     cmp rax, 0
     jl .chroot_fail
+
+    call dbg_chroot_success
+
+    ; set document_root to default_docroot (".")
+    mov ax, [default_docroot]
+    mov [document_root], ax
 
     ; rebuild errordoc paths now that we're inside the jail
     BUILDPATH errordoc_405_path, document_root, errordoc_405
@@ -103,12 +106,12 @@ pre_serve:
     BUILDPATH errordoc_401_path, document_root, errordoc_401
     BUILDPATH errordoc_400_path, document_root, errordoc_400
 
+    LOG_DEBUG log_errordoc_paths_rebuilt, log_errordoc_paths_rebuilt_len
+
     jmp .chroot_end
 
 .chroot_fail:
-    ; for now do nothing
-    ; we'll log in verbose when the feature will be there
-    EXIT 69
+    call warn_chroot_fail
 
 .chroot_end:
     ret  ; .do_chroot return point
@@ -131,11 +134,12 @@ pre_serve:
     jl .nobody_fail
 
     mov dword [current_uid], 65534
+
+    LOG_DEBUG log_nobody_succeeded, log_nobody_succeeded_len
     jmp .nobody_end
 
 .nobody_fail:
-    ; for now do nothing
-    ; we'll log in verbose when the feature will be there
+    LOG_WARNING log_nobody_failed, log_nobody_failed_len
 
 .nobody_end:
     ret  ; .im_nobody return point
@@ -173,14 +177,18 @@ pre_serve:
     mov r10, 8            ; "sigsetsize"
     syscall
 
-    cmp rax, 0
+    mov rdi, rax
+    mov rax, 17           ; for warn / debug logs
+
+    cmp rdi, 0
     jl .sigchld_fail
+
+    call dbg_sighandler_success
 
     jmp .sigchld_end
 
 .sigchld_fail:
-    ; for now do nothing
-    ; we'll log in verbose when the feature will be there
+    call warn_sighandler_fail
 
 .sigchld_end:
     ret  ; .sigchld_setup return point
@@ -200,6 +208,8 @@ pre_serve:
     jle .sigchld_ok  ; no child reaped, stop
 
     dec word [process_count]
+
+    call dbg_process_reaped
     jmp .sigchld_handler
 
 .sigchld_ok:
@@ -230,14 +240,18 @@ pre_serve:
     mov r10, 8            ; "sigsetsize"
     syscall
 
-    cmp rax, 0
+    mov rdi, rax
+    mov rax, 15           ; for warn / debug logs
+
+    cmp rdi, 0
     jl .sigterm_fail
+
+    call dbg_sighandler_success
 
     jmp .sigterm_end
 
 .sigterm_fail:
-    ; for now do nothing
-    ; we'll log in verbose when the feature will be there
+    call warn_sighandler_fail
 
 .sigterm_end:
     ret  ; return point for .sigterm_setup
@@ -271,14 +285,18 @@ pre_serve:
     mov r10, 8            ; "sigsetsize"
     syscall
 
-    cmp rax, 0
+    mov rdi, rax
+    mov rax, 2            ; for warn / debug logs
+
+    cmp rdi, 0
     jl .sigint_fail
+
+    call dbg_sighandler_success
 
     jmp .sigint_end
 
 .sigint_fail:
-    ; for now do nothing
-    ; we'll log in verbose when the feature will be there
+    call warn_sighandler_fail
 
 .sigint_end:
     ret  ; return point for .sigint_setup

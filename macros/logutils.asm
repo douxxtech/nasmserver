@@ -18,6 +18,9 @@ section .data
     log_two_dots                    db ":", 0
     log_two_dots_len                equ $ - log_two_dots - 1
 
+    log_slash                       db "/", 0
+    log_slash_len                   equ $ - log_slash - 1
+
 
     ; log level prefixes
 
@@ -30,6 +33,8 @@ section .data
     log_prefix_err                  db "[ERROR] ", 0
     log_prefix_err_len              equ $ - log_prefix_err - 1
 
+    log_prefix_dbg                  db "* ", 0
+    log_prefix_dbg_len              equ $ - log_prefix_dbg - 1
 
     ; startup banner
     log_started_nasmserver          db "Started the NASMServer static files HTTP server.", 0xa, 0
@@ -127,6 +132,79 @@ section .data
     log_stopping                    db "Stopping... (signal received)", 0
     log_stopping_len                equ $ - log_stopping - 1
 
+    log_child_created_p1            db "Started new child (", 0
+    log_child_created_p2            db ") to handle request from ", 0
+
+    log_child_exit_p1               db "Exiting child (", 0
+    log_child_exit_p2               db "): request served", 0
+
+    log_method_head                 db "Resolved method to HEAD", 0
+    log_method_head_len             equ $ - log_method_head - 1
+
+    log_method_get                  db "Resolved method to GET", 0
+    log_method_get_len              equ $ - log_method_get - 1
+
+    log_path_resolved               db "Resolved path to ", 0
+
+    log_dotfile_blocked             db "Dotfile access blocked: ", 0
+
+    log_replying_with_code          db "Replying to request with status code ", 0
+
+    log_sent_bytes_p1               db "Replying to request with ", 0
+    log_sent_bytes_p2               db " bytes (body)", 0
+
+    log_process_reaped              db "Process reaped, current count: ", 0
+
+    log_chroot_failed_p1            db "Failed to chroot into ", 0
+    log_chroot_failed_p2            db ", continuing anyways...", 0
+
+    log_chroot_succeeded            db "Successfully chroot-ed into ", 0 
+
+    log_errordoc_paths_rebuilt      db "Errordoc paths rebuilt", 0
+    log_errordoc_paths_rebuilt_len  equ $ - log_errordoc_paths_rebuilt - 1
+
+    log_nobody_failed               db "Failed to drop privileges to nobody, continuing anyways...", 0
+    log_nobody_failed_len           equ $ - log_nobody_failed - 1
+
+    log_nobody_succeeded            db "Successfully dropped privileges to nobody", 0
+    log_nobody_succeeded_len        equ $ - log_nobody_succeeded - 1
+
+    log_success_sighandler_p1       db "Successfully registered the ", 0
+    log_success_sighandler_p2       db " signal handler", 0
+
+    log_fail_sighandler_p1          db "Failed to register the ", 0
+    log_fail_sighandler_p2          db ", continuing anyways...", 0
+
+    log_sighanlder_sigterm          db "SIGTERM", 0
+    log_sighanlder_sigint           db "SIGINT", 0
+    log_sighanlder_sigchld          db "SIGCHLD", 0
+
+    log_process_started_p1          db "Main process started by UID ", 0
+    log_process_started_p2          db " with PID ", 0
+
+    log_config_header               db "Loaded config:", 0
+    log_config_docroot              db "  DOCUMENT_ROOT:    ", 0
+    log_config_index                db "  INDEX_FILE:       ", 0
+    log_config_bindaddr             db "  BIND_ADDRESS:     ", 0
+    log_config_port                 db "  PORT:             ", 0
+    log_config_maxreqs              db "  MAX_REQUESTS:     ", 0
+    log_config_maxage               db "  MAX_AGE:          ", 0
+    log_config_servername           db "  SERVER_NAME:      ", 0
+    log_config_logfile              db "  LOG_FILE:         ", 0
+    log_config_loglevel             db "  LOG_LEVEL:        ", 0
+    log_config_servedots            db "  SERVE_DOTS:       ", 0
+    log_config_usexri               db "  USE_X_REAL_IP:    ", 0
+    log_config_usechroot            db "  USE_CHROOT:       ", 0
+    log_config_noperms              db "  DROP_PRIVILEGES:  ", 0
+    log_config_authrealm            db "  AUTH_REALM:       ", 0
+    log_config_authuser             db "  AUTH_USER:        ", 0
+    log_config_authpass             db "  AUTH_PASSWORD:    ", 0
+    log_config_authpass_set         db "********", 0       ; shown if password is set
+    log_config_err400               db "  ERRORDOC_400:     ", 0
+    log_config_err401               db "  ERRORDOC_401:     ", 0
+    log_config_err403               db "  ERRORDOC_403:     ", 0
+    log_config_err404               db "  ERRORDOC_404:     ", 0
+    log_config_err405               db "  ERRORDOC_405:     ", 0
 
     ; CLI / arguments / help
     log_arg_not_recognized_p1       db "Argument '", 0
@@ -150,11 +228,13 @@ section .data
 
 
 section .bss
-    tm_buf     resb 64  ; struct tm (libc)
-    ts_buf     resb 16  ; "HH:MM:SS \0" + padding
-    rs_buf     resb 32  ; "dd/mmm/yyyy:HH:MM:SS +-zzzz \0" + padding
+    tm_buf      resb 64    ; struct tm (libc)
+    ts_buf      resb 16    ; "HH:MM:SS \0" + padding
+    rs_buf      resb 32    ; "dd/mmm/yyyy:HH:MM:SS +-zzzz \0" + padding
 
-    status_buf resb 20  ; current ITOA scratch-buffer requirement
+    status_buf  resb 20    ; current ITOA scratch-buffer requirement
+
+    log_buffer  resb 4096  ; buffer for a variety of logs
 
 ; PRINT_TIMESTAMP
 ;   Prints "HH:MM:SS " to stdout via clock_gettime + localtime_r + strftime.
@@ -196,9 +276,16 @@ section .bss
 ;     %2: message length
 ;   Clobbers: rax, rdi, rsi, rdx, rcx
 %macro LOG_INFO 2
+    ; check if we should log or not
+    cmp byte [log_level], 0  ; log lvl none = skip
+    je %%end
+
+%%log:
     PRINT_TIMESTAMP
     PRINT log_prefix_info, log_prefix_info_len
     PRINTN %1, %2
+
+%%end:
 %endmacro
 
 ; LOG_WARNING msg, len
@@ -208,9 +295,16 @@ section .bss
 ;     %2: message length
 ;   Clobbers: rax, rdi, rsi, rdx, rcx
 %macro LOG_WARNING 2
+    ; check if we should log or not
+    cmp byte [log_level], 0  ; log lvl none = skip
+    je %%end
+
+%%log:
     PRINT_TIMESTAMP
     PRINT log_prefix_warning, log_prefix_warning_len
     PRINTN %1, %2
+
+%%end:
 %endmacro
 
 ; LOG_ERR msg, len
@@ -220,10 +314,41 @@ section .bss
 ;     %2: message length
 ;   Clobbers: rax, rdi, rsi, rdx, rcx
 %macro LOG_ERR 2
+    ; check if we should log or not
+    cmp byte [log_level], 0  ; log lvl none = skip
+    je %%end
+
+%%log:
     PRINT_TIMESTAMP
     PRINTF 2, log_prefix_err, log_prefix_err_len
     PRINTF 2, %1, %2
     PRINTF 2, sysutils_newline, 1
+
+%%end:
+%endmacro
+
+; LOG_DEBUG msg, len
+;   Prints: "HH:MM:SS [ERROR] <msg>\n" to STDERR
+;   Args:
+;     %1: message buffer
+;     %2: message length
+;   Clobbers: rax, rdi, rsi, rdx, rcx
+%macro LOG_DEBUG 2
+    ; check if we should log or not
+    cmp byte [log_level], 2  ; log lvl none = skip
+    jne %%end
+
+%%log:
+    PRINTF 2, log_prefix_dbg, log_prefix_dbg_len
+
+    STRLEN current_pid_str, rcx
+    PRINTF 2, current_pid_str, rcx
+    PRINTF 2, log_two_dots, log_two_dots_len
+    PRINTF 2, log_space, log_space_len
+    PRINTF 2, %1, %2
+    PRINTF 2, sysutils_newline, 1
+
+%%end:
 %endmacro
 
 ; LOG_PORT
@@ -234,6 +359,11 @@ section .bss
 ;     log_port_buf   buffer for integer-to-ASCII conversion
 ;   Clobbers: rax, rbx, rdi, rsi, rdx, rcx, r9
 %macro LOG_PORT 0
+    ; check if we should log or not
+    cmp byte [log_level], 0  ; log lvl none = skip
+    je %%end
+
+%%log:
     ; this mess prints the port log
     PRINT_TIMESTAMP
 
@@ -250,6 +380,8 @@ section .bss
 
     ITOA rbx, log_port_buf, r9
     PRINTN log_port_buf, r9                        ; XXXX
+
+%%end:
 %endmacro
 
 ; LOG_REQUEST_CLFE
@@ -263,23 +395,34 @@ section .bss
 ;     username         null-terminated auth username (or empty for "-")
 ;     request          raw HTTP request buffer (up to 8192 bytes, CR/LF terminated)
 ;     last_status      word containing the HTTP status code
-;     content_length_b null-terminated response size string (or empty for "0")
+;     itoa_buf         null-terminated response size string (or empty for "0")
 ;     referer          null-terminated Referer header value (or empty for "-")
 ;     user_agent       null-terminated User-Agent header value (or empty for "-")
-;   Clobbers: rax, rcx, rdi, rsi, rdx, r9, r10
+;   Clobbers: rax, rbx, rcx, rdi, rsi, rdx, r8, r9, r10
 %macro LOG_REQUEST_CLFE 1
 
+    ; check if we should log or not
+    cmp qword [log_file], 1
+    jne %%pt1                ; log to file = log
+
+    cmp byte [log_level], 0  ; not to file + log lvl none = skip
+    je %%end
+
+
 %%pt1:
+    CLB                      ; clear the log buffer before building
+    lea r8, [log_buffer]     ; r8 = write pointer into log_buffer
+
     ; pt. 1: ip
     lea r10, [real_ip]
     STRLEN r10, rcx
-    PRINTF %1, r10, rcx
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, r10, rcx
+    APPEND r8, log_space, log_space_len
 
 %%pt2:
     ; pt. 2: identity, not supported
-    PRINTF %1, clfe_missing, clfe_missing_len
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, clfe_missing, clfe_missing_len
+    APPEND r8, log_space, log_space_len
 
 %%pt3:
     ; pt. 3: auth
@@ -289,20 +432,20 @@ section .bss
     cmp rcx, 0                            ; if empty, no auth
     je %%no_auth
 
-    PRINTF %1, r10, rcx
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, r10, rcx
+    APPEND r8, log_space, log_space_len
 
     jmp %%pt4
 
 %%no_auth:
-    PRINTF %1, clfe_missing, clfe_missing_len
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, clfe_missing, clfe_missing_len
+    APPEND r8, log_space, log_space_len
 
 %%pt4:
     ; pt. 4: timestamp
-    PRINTF %1, clfe_start_ts, clfe_start_ts_len
+    APPEND r8, clfe_start_ts, clfe_start_ts_len
 
-    push %1            ;  save %1 (r9) so it doesn't get clobbered
+    push r8            ; save write pointer so it doesn't get clobbered
 
     ; get the current wall-clock time
     ; clock_gettime(clockid, timespec)
@@ -323,16 +466,16 @@ section .bss
     mov rcx, tm_buf    ; fixed: pass struct tm*, not rs_buf
     call strftime
 
-    pop %1
+    pop r8             ; restore write pointer
 
     STRLEN rs_buf, rcx
-    PRINTF %1, rs_buf, rcx
+    APPEND r8, rs_buf, rcx
 
-    PRINTF %1, clfe_end_ts, clfe_end_ts_len
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, clfe_end_ts, clfe_end_ts_len
+    APPEND r8, log_space, log_space_len
 
 %%pt5:
-    PRINTF %1, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, log_quotation_mark, log_quotation_mark_len
 
     lea r10, [request]
     xor r9, r9
@@ -356,10 +499,10 @@ section .bss
     jmp %%req_scan
 
 %%req_print:
-    PRINTF %1, r10, r9
+    APPEND r8, r10, r9
 
-    PRINTF %1, log_quotation_mark, log_quotation_mark_len
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, log_space, log_space_len
 
 %%pt6:
     ; pt. 6: status code
@@ -367,64 +510,79 @@ section .bss
     movzx r10, word [last_status]
 
     ITOA r10, status_buf, r9
-    PRINTF %1, status_buf, r9
+    APPEND r8, status_buf, r9
 
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, log_space, log_space_len
 
 %%pt7:
     ; pt. 7: size
-    STRLEN content_length_b, rcx
+    STRLEN itoa_buf, rcx
 
     cmp rcx, 0
     je %%no_len
 
-    PRINTF %1, content_length_b, rcx
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, itoa_buf, rcx
+    APPEND r8, log_space, log_space_len
 
     jmp %%pt8
 
 %%no_len:
-    PRINTF %1, clfe_nobytes, clfe_nobytes_len
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, clfe_nobytes, clfe_nobytes_len
+    APPEND r8, log_space, log_space_len
 
 %%pt8:
     ; pt. 8: "referer"
-    PRINTF %1, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, log_quotation_mark, log_quotation_mark_len
 
     STRLEN referer, rcx
 
     cmp rcx, 0
     je %%no_referer
 
-    PRINTF %1, referer, rcx
-    PRINTF %1, log_quotation_mark, log_quotation_mark_len
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, referer, rcx
+    APPEND r8, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, log_space, log_space_len
 
     jmp %%pt9
 
 %%no_referer:
-    PRINTF %1, clfe_missing, clfe_missing_len
-    PRINTF %1, log_quotation_mark, log_quotation_mark_len
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, clfe_missing, clfe_missing_len
+    APPEND r8, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, log_space, log_space_len
 
 %%pt9:
     ; pt. 9: user agent
-    PRINTF %1, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, log_quotation_mark, log_quotation_mark_len
 
     STRLEN user_agent, rcx
 
     cmp rcx, 0
     je %%no_ua
 
-    PRINTF %1, user_agent, rcx
-    PRINTF %1, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, user_agent, rcx
+    APPEND r8, log_quotation_mark, log_quotation_mark_len
 
     jmp %%done
 
 %%no_ua:
-    PRINTF %1, clfe_missing, clfe_missing_len
-    PRINTF %1, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, clfe_missing, clfe_missing_len
+    APPEND r8, log_quotation_mark, log_quotation_mark_len
 
 %%done:
-    PRINTF %1, sysutils_newline, 1
+    APPEND r8, sysutils_newline, 1
+
+    ; flush the whole log line in one shot
+    lea rsi, [log_buffer]
+    mov rdx, r8
+    sub rdx, rsi                           ; length = write pointer - base
+    PRINTF %1, log_buffer, rdx
+
+%%end:
+%endmacro
+
+; CLB
+;   Clears the log buffer
+;   Clobbers: rax, rdi, rcx
+%macro CLB 0
+    CLEAR_BUFFER log_buffer, 2048
 %endmacro
