@@ -85,12 +85,9 @@ pre_serve:
     lea rdi, document_root
     syscall
 
-    ; set the docroot to '.' (/)
-    mov word [document_root], 0x002e  ; ".\0" (reset before chroot since we're already inside)
-
     ; chroot(filename)
     mov rax, 161
-    lea rdi, document_root
+    lea rdi, default_docroot  ; "."
     syscall
 
     cmp rax, 0
@@ -98,8 +95,9 @@ pre_serve:
 
     call dbg_chroot_success
 
-    ; set the docroot to '' (/)
-    mov word [document_root], 0x00
+    ; set document_root to default_docroot (".")
+    mov ax, [default_docroot]
+    mov [document_root], ax
 
     ; rebuild errordoc paths now that we're inside the jail
     BUILDPATH errordoc_405_path, document_root, errordoc_405
