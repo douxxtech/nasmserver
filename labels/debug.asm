@@ -98,12 +98,12 @@ dbg_status_code:
     cmp byte [log_level], 2
     jne dbg_skip
 
-    CLB
-
     mov r10, rdi
     push rdi                          ; we need to save rdi since .write_header needs it
 
     ITOA r10, itoa_buf, rcx
+
+    CLB
 
     lea r9, [log_buffer]
     AAPPEND r9, log_replying_with_code
