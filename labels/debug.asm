@@ -20,7 +20,7 @@ dbg_new_child:
     ; getpid()
     mov rax, 39
     syscall
-    
+
     mov r10, rax
     ITOA r10, current_pid_str, rcx
 
@@ -122,10 +122,10 @@ dbg_bytes_sent:
     cmp byte [log_level], 2
     jne dbg_skip
 
-    CLB
-
     mov r10, rax
     ITOA r10, itoa_buf, rcx
+
+    CLB
 
     lea r9, [log_buffer]
 
