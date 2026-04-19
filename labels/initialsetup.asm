@@ -164,7 +164,7 @@ initial_setup:
     test al, al
     jnz .copy_argv1
 
-    jmp .load_env
+    jmp .get_uid
 
 .use_default:
     lea r14, [env_path]
