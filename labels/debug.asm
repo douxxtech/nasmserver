@@ -20,6 +20,7 @@ dbg_new_child:
     ; getpid()
     mov rax, 39
     syscall
+    
     mov r10, rax
     ITOA r10, current_pid_str, rcx
 
