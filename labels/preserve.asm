@@ -85,23 +85,24 @@ pre_serve:
     lea rdi, document_root
     syscall
 
-    ; set the docroot to '.' (/)
-    mov word [document_root], 0x002e  ; ".\0" (reset before chroot since we're already inside)
+    ; set the docroot to '' (/)
+    mov word [document_root], 0x00  ; "\0" (reset before chroot since we're already inside)
 
     ; chroot(filename)
     mov rax, 161
-    lea rdi, document_root
+    lea rdi, default_docroot  ; (".")
     syscall
 
     cmp rax, 0
     jl .chroot_fail
 
     ; rebuild errordoc paths now that we're inside the jail
-    BUILDPATH errordoc_405_path, document_root, errordoc_405
-    BUILDPATH errordoc_404_path, document_root, errordoc_404
-    BUILDPATH errordoc_403_path, document_root, errordoc_403
-    BUILDPATH errordoc_401_path, document_root, errordoc_401
-    BUILDPATH errordoc_400_path, document_root, errordoc_400
+    
+    BUILDPATH errordoc_405_path, default_docroot, errordoc_405  ; again, default_docroot is just "."
+    BUILDPATH errordoc_404_path, default_docroot, errordoc_404
+    BUILDPATH errordoc_403_path, default_docroot, errordoc_403
+    BUILDPATH errordoc_401_path, default_docroot, errordoc_401
+    BUILDPATH errordoc_400_path, default_docroot, errordoc_400
 
     jmp .chroot_end
 
