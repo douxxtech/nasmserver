@@ -85,9 +85,6 @@ pre_serve:
     lea rdi, document_root
     syscall
 
-    ; set the docroot to '' (/)
-    mov word [document_root], 0x00  ; "\0" (reset before chroot since we're already inside)
-
     ; chroot(filename)
     mov rax, 161
     lea rdi, default_docroot  ; (".")
@@ -96,20 +93,24 @@ pre_serve:
     cmp rax, 0
     jl .chroot_fail
 
+    call dbg_chroot_success
+
+    ; set the docroot to '' (/)
+    mov word [document_root], 0x00
+
     ; rebuild errordoc paths now that we're inside the jail
-    
     BUILDPATH errordoc_405_path, default_docroot, errordoc_405  ; again, default_docroot is just "."
     BUILDPATH errordoc_404_path, default_docroot, errordoc_404
     BUILDPATH errordoc_403_path, default_docroot, errordoc_403
     BUILDPATH errordoc_401_path, default_docroot, errordoc_401
     BUILDPATH errordoc_400_path, default_docroot, errordoc_400
 
+    LOG_DEBUG log_errordoc_paths_rebuilt, log_errordoc_paths_rebuilt_len
+
     jmp .chroot_end
 
 .chroot_fail:
-    ; for now do nothing
-    ; we'll log in verbose when the feature will be there
-    EXIT 69
+    call warn_chroot_fail
 
 .chroot_end:
     ret  ; .do_chroot return point
@@ -132,11 +133,12 @@ pre_serve:
     jl .nobody_fail
 
     mov dword [current_uid], 65534
+
+    LOG_DEBUG log_nobody_succeeded, log_nobody_succeeded_len
     jmp .nobody_end
 
 .nobody_fail:
-    ; for now do nothing
-    ; we'll log in verbose when the feature will be there
+    LOG_WARNING log_nobody_failed, log_nobody_failed_len
 
 .nobody_end:
     ret  ; .im_nobody return point
@@ -201,6 +203,8 @@ pre_serve:
     jle .sigchld_ok  ; no child reaped, stop
 
     dec word [process_count]
+
+    call dbg_process_reaped
     jmp .sigchld_handler
 
 .sigchld_ok:

@@ -129,6 +129,42 @@ section .data
     log_stopping                    db "Stopping... (signal received)", 0
     log_stopping_len                equ $ - log_stopping - 1
 
+    log_child_created_p1            db "Started new child (", 0
+    log_child_created_p2            db ") to handle request from ", 0
+
+    log_child_exit_p1               db "Exiting child (", 0
+    log_child_exit_p2               db "): request served", 0
+
+    log_method_head                 db "Resolved method to HEAD", 0
+    log_method_head_len             equ $ - log_method_head - 1
+
+    log_method_get                  db "Resolved method to GET", 0
+    log_method_get_len              equ $ - log_method_get - 1
+
+    log_path_resolved               db "Resolved path to ", 0
+
+    log_dotfile_blocked             db "Dotfile access blocked: ", 0
+
+    log_replying_with_code          db "Replying to request with status code ", 0
+
+    log_sent_bytes_p1               db "Replying to request with ", 0
+    log_sent_bytes_p2               db " bytes (body)", 0
+
+    log_process_reaped              db "Process reaped, current count: ", 0
+
+    log_chroot_failed_p1            db "Failed to chroot into ", 0
+    log_chroot_failed_p2            db ", continuing anyways...", 0
+
+    log_chroot_succeeded            db "Successfully chroot-ed into ", 0 
+
+    log_errordoc_paths_rebuilt      db "Errordoc paths rebuilt", 0
+    log_errordoc_paths_rebuilt_len  equ $ - log_errordoc_paths_rebuilt - 1
+
+    log_nobody_failed               db "Failed to drop privileges to nobody, continuing anyways...", 0
+    log_nobody_failed_len           equ $ - log_nobody_failed - 1
+
+    log_nobody_succeeded            db "Successfully dropped privileges to nobody", 0
+    log_nobody_succeeded_len        equ $ - log_nobody_succeeded - 1
 
     ; CLI / arguments / help
     log_arg_not_recognized_p1       db "Argument '", 0
@@ -152,11 +188,13 @@ section .data
 
 
 section .bss
-    tm_buf     resb 64  ; struct tm (libc)
-    ts_buf     resb 16  ; "HH:MM:SS \0" + padding
-    rs_buf     resb 32  ; "dd/mmm/yyyy:HH:MM:SS +-zzzz \0" + padding
+    tm_buf      resb 64    ; struct tm (libc)
+    ts_buf      resb 16    ; "HH:MM:SS \0" + padding
+    rs_buf      resb 32    ; "dd/mmm/yyyy:HH:MM:SS +-zzzz \0" + padding
 
-    status_buf resb 20  ; current ITOA scratch-buffer requirement
+    status_buf  resb 20    ; current ITOA scratch-buffer requirement
+
+    log_buffer  resb 2048  ; buffer for a variety of logs
 
 ; PRINT_TIMESTAMP
 ;   Prints "HH:MM:SS " to stdout via clock_gettime + localtime_r + strftime.
@@ -208,6 +246,7 @@ section .bss
     PRINTN %1, %2
 
 %%end:
+    CLEAR_BUFFER log_buffer, 2048
 %endmacro
 
 ; LOG_WARNING msg, len
@@ -227,6 +266,7 @@ section .bss
     PRINTN %1, %2
 
 %%end:
+    CLEAR_BUFFER log_buffer, 2048
 %endmacro
 
 ; LOG_ERR msg, len
@@ -247,6 +287,7 @@ section .bss
     PRINTF 2, sysutils_newline, 1
 
 %%end:
+    CLEAR_BUFFER log_buffer, 2048
 %endmacro
 
 ; LOG_DEBUG msg, len
@@ -261,12 +302,12 @@ section .bss
     jne %%end
 
 %%log:
-    PRINT_TIMESTAMP
     PRINTF 2, log_prefix_dbg, log_prefix_dbg_len
     PRINTF 2, %1, %2
     PRINTF 2, sysutils_newline, 1
 
 %%end:
+    CLEAR_BUFFER log_buffer, 2048
 %endmacro
 
 ; LOG_PORT
@@ -300,6 +341,7 @@ section .bss
     PRINTN log_port_buf, r9                        ; XXXX
 
 %%end:
+    CLEAR_BUFFER log_buffer, 2048
 %endmacro
 
 ; LOG_REQUEST_CLFE
@@ -313,7 +355,7 @@ section .bss
 ;     username         null-terminated auth username (or empty for "-")
 ;     request          raw HTTP request buffer (up to 8192 bytes, CR/LF terminated)
 ;     last_status      word containing the HTTP status code
-;     content_length_b null-terminated response size string (or empty for "0")
+;     itoa_buf null-terminated response size string (or empty for "0")
 ;     referer          null-terminated Referer header value (or empty for "-")
 ;     user_agent       null-terminated User-Agent header value (or empty for "-")
 ;   Clobbers: rax, rcx, rdi, rsi, rdx, r9, r10
@@ -431,12 +473,12 @@ section .bss
 
 %%pt7:
     ; pt. 7: size
-    STRLEN content_length_b, rcx
+    STRLEN itoa_buf, rcx
 
     cmp rcx, 0
     je %%no_len
 
-    PRINTF %1, content_length_b, rcx
+    PRINTF %1, itoa_buf, rcx
     PRINTF %1, log_space, log_space_len
 
     jmp %%pt8
@@ -487,4 +529,5 @@ section .bss
     PRINTF %1, sysutils_newline, 1
 
 %%end:
+    CLEAR_BUFFER log_buffer, 2048
 %endmacro

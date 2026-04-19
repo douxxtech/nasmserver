@@ -8,6 +8,7 @@
 %include "./macros/sysutils.asm"
 %include "./macros/whatmimeisthat.asm"
 
+%include "./labels/debug.asm"
 %include "./labels/flagparser.asm"
 %include "./labels/initialsetup.asm"
 %include "./labels/preserve.asm"
@@ -60,6 +61,7 @@ section .bss
     ; system
     process_count     resw 1     ; current processes count
     shutdown          resb 1     ; if a shutdown was requested by a signal
+    current_pid_str   resb 20    ; the current pid, as a string
 
     ; network
     client_addr       resb 16
@@ -85,7 +87,7 @@ section .bss
 
     ; misc
     last_status       resw 1     ; for logs
-    content_length_b  resb 20
+    itoa_buf          resb 20
     log_port_buf      resb 8     ; "65535\n\0" worst case
     header_time       resb 32    ; "Mon, 01 Jan 2000 00:00:00 GMT\0" + padding
     request_type      resb 1     ; GET = 0, HEAD = 1
@@ -93,8 +95,6 @@ section .bss
 
 section .text
     global _start
-    global .reap_loop
-
 
 ; consistent register usage, after startup (persistent across the request handling):
 ;   r15 = server socket fd
@@ -187,9 +187,6 @@ _start:
 
     cmp rax, 0
     jl .fail_accept
-
-    ; small issue: .close_client only gets called on each new request,
-    ; so zombie processes linger until the next connection comes in
     jg .close_client
 
     ; we're now in the child process
@@ -214,6 +211,8 @@ _start:
     
     call inet_ntop
 
+    call dbg_new_child
+
 .handle_request:
     READ_FILE r14, request, 8192
 
@@ -236,10 +235,14 @@ _start:
     jmp .forbidden                   ; in case i add a new code and forgot to implement it here
 
 .get:
+    LOG_DEBUG log_method_get, log_method_get_len
+
     mov byte [request_type], 0
     jmp .auth_check
 
 .head:
+    LOG_DEBUG log_method_head, log_method_head_len
+
     mov byte [request_type], 1
 
 .auth_check:
@@ -311,6 +314,10 @@ _start:
 
     STRCUT path, '?'                              ; remove the ?query=string, we won't process it as a static site
 
+    push rax
+    call dbg_path_resolved
+    pop rax
+
     cmp byte [path + rax], '/'
     jne .check_dotfile
 
@@ -333,8 +340,11 @@ _start:
 
     PATH_HAS_DOT path, rcx
 
-    cmp rcx, 1
-    je .forbidden
+    cmp rcx, 0                ; 0 = not found, 1 = found
+    je .check_exists
+
+    call dbg_dotfile_blocked
+    jmp .forbidden
 
 .check_exists:
     ; check if the file exists before continuing
@@ -501,6 +511,8 @@ _start:
     ; rdi: status code (200, 400, 403, 404 or 405)
     ; appends the HTTP header to the 'response' buffer
 
+    call dbg_status_code
+
     cmp rdi, 405
     je .write_405
 
@@ -643,10 +655,10 @@ _start:
     cmp rbx, 0                          ; rbx < 0 means that it failed, skipping header
     jl .accept_ranges_header
 
-    ITOA rbx, content_length_b, rcx
+    ITOA rbx, itoa_buf, rcx
 
     AAPPEND r12, content_length_header
-    AAPPEND r12, content_length_b
+    AAPPEND r12, itoa_buf
     AAPPEND r12, crlf
 
 .accept_ranges_header:
@@ -694,6 +706,8 @@ _start:
     mov r10, 0x7fffffff        ; send as much as possible
     syscall
 
+    call dbg_bytes_sent
+
     ; close(fd)
     mov rax, 3
     mov rdi, r11
@@ -728,6 +742,8 @@ _start:
 
     call .log_request
 
+    call dbg_child_exit
+
     add rsp, 16
     EXIT 0 ; child exits
 
@@ -760,6 +776,8 @@ _start:
     jle .reap_done  ; no child reaped, stop
 
     dec word [process_count]
+
+    call dbg_process_reaped
     jmp .reap_loop
 
 .reap_done:
