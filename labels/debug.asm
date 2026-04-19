@@ -31,7 +31,8 @@ dbg_new_child:
     mov byte [r9], 0
 
     lea rcx, [log_buffer]
-    sub r9, rcx                       ; r9 = length of what was written
+    sub r9, rcx
+    mov rbx, r9                       ; r9 = length of what was written
 
     LOG_DEBUG log_buffer, r9
 
@@ -50,7 +51,8 @@ dbg_child_exit:
     mov byte [r9], 0
 
     lea rcx, [log_buffer]
-    sub r9, rcx                       ; r9 = length of what was written
+    sub r9, rcx
+    mov rbx, r9                       ; r9 = length of what was written
 
     LOG_DEBUG log_buffer, r9
 
@@ -71,6 +73,7 @@ dbg_path_resolved:
 
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     ret                            ; dbg_path_resolved return point
@@ -90,6 +93,7 @@ dbg_dotfile_blocked:
 
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     ret                              ; dbg_dotfile_blocked return point
@@ -111,6 +115,7 @@ dbg_status_code:
 
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
 
     LOG_DEBUG log_buffer, r9
 
@@ -134,6 +139,7 @@ dbg_bytes_sent:
 
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
 
     LOG_DEBUG log_buffer, r9
 
@@ -161,6 +167,7 @@ dbg_process_reaped:
 
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
 
     LOG_DEBUG log_buffer, r9
 
@@ -179,6 +186,7 @@ dbg_chroot_success:
 
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
 
     LOG_DEBUG log_buffer, r9
 
@@ -198,8 +206,9 @@ warn_chroot_fail:                     ; yea thats a warning but meh
 
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
 
-    LOG_WARNING log_buffer, r9
+    LOG_WARNING log_buffer, rbx
 
     ret                               ; warn_chroot_fail return point
 
@@ -243,6 +252,7 @@ dbg_sighandler_success:
 
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
 
     LOG_DEBUG log_buffer, r9
 
@@ -289,6 +299,7 @@ warn_sighandler_fail:
 
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
 
     LOG_WARNING log_buffer, r9
 
@@ -313,6 +324,7 @@ dbg_startup_infos:
 
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
 
     LOG_DEBUG log_buffer, r9
 
@@ -322,6 +334,7 @@ dbg_startup_infos:
     AAPPEND r9, log_config_header
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     CLB
@@ -330,6 +343,7 @@ dbg_startup_infos:
     AAPPEND r9, document_root
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     CLB
@@ -338,6 +352,7 @@ dbg_startup_infos:
     AAPPEND r9, index_file
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     CLB
@@ -346,6 +361,7 @@ dbg_startup_infos:
     AAPPEND r9, bind_addr_str
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     CLB
@@ -356,6 +372,7 @@ dbg_startup_infos:
     AAPPEND r9, itoa_buf
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     CLB
@@ -366,6 +383,7 @@ dbg_startup_infos:
     AAPPEND r9, itoa_buf
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     CLB
@@ -376,6 +394,7 @@ dbg_startup_infos:
     AAPPEND r9, itoa_buf
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     CLB
@@ -384,6 +403,7 @@ dbg_startup_infos:
     AAPPEND r9, server_w_ver
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     CLB
@@ -392,6 +412,7 @@ dbg_startup_infos:
     AAPPEND r9, log_file_path
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     CLB
@@ -400,6 +421,7 @@ dbg_startup_infos:
     AAPPEND r9, log_level_str
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     CLB
@@ -408,6 +430,7 @@ dbg_startup_infos:
     AAPPEND r9, serve_dots_str
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     CLB
@@ -416,6 +439,7 @@ dbg_startup_infos:
     AAPPEND r9, use_xri_str
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     CLB
@@ -424,6 +448,7 @@ dbg_startup_infos:
     AAPPEND r9, use_chroot_str
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     CLB
@@ -432,6 +457,7 @@ dbg_startup_infos:
     AAPPEND r9, be_nobody_str
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     CLB
@@ -440,6 +466,7 @@ dbg_startup_infos:
     AAPPEND r9, auth_realm
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     CLB
@@ -448,6 +475,7 @@ dbg_startup_infos:
     AAPPEND r9, auth_username
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     ; auth_password: show ****** if set, empty if not
@@ -460,6 +488,7 @@ dbg_startup_infos:
 .config_pass_empty:
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     CLB
@@ -468,6 +497,7 @@ dbg_startup_infos:
     AAPPEND r9, errordoc_400_path
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     CLB
@@ -476,6 +506,7 @@ dbg_startup_infos:
     AAPPEND r9, errordoc_401_path
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     CLB
@@ -484,6 +515,7 @@ dbg_startup_infos:
     AAPPEND r9, errordoc_403_path
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     CLB
@@ -492,6 +524,7 @@ dbg_startup_infos:
     AAPPEND r9, errordoc_404_path
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     CLB
@@ -500,6 +533,7 @@ dbg_startup_infos:
     AAPPEND r9, errordoc_405_path
     lea rcx, [log_buffer]
     sub r9, rcx
+    mov rbx, r9
     LOG_DEBUG log_buffer, r9
 
     ret                            ; dbg_startup_infos return point
