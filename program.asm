@@ -806,8 +806,8 @@ _start:
     rep movsb
 
 .log_req:
-    mov r8, qword [log_file]
-    LOG_REQUEST_CLFE r8
+    mov r15, qword [log_file]
+    LOG_REQUEST_CLFE r15
 
     ret
 

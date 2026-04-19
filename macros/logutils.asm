@@ -392,10 +392,10 @@ section .bss
 ;     username         null-terminated auth username (or empty for "-")
 ;     request          raw HTTP request buffer (up to 8192 bytes, CR/LF terminated)
 ;     last_status      word containing the HTTP status code
-;     itoa_buf null-terminated response size string (or empty for "0")
+;     itoa_buf         null-terminated response size string (or empty for "0")
 ;     referer          null-terminated Referer header value (or empty for "-")
 ;     user_agent       null-terminated User-Agent header value (or empty for "-")
-;   Clobbers: rax, rcx, rdi, rsi, rdx, r9, r10
+;   Clobbers: rax, rbx, rcx, rdi, rsi, rdx, r8, r9, r10
 %macro LOG_REQUEST_CLFE 1
 
     ; check if we should log or not
@@ -407,16 +407,19 @@ section .bss
 
 
 %%pt1:
+    CLB                      ; clear the log buffer before building
+    lea r8, [log_buffer]     ; r8 = write pointer into log_buffer
+
     ; pt. 1: ip
     lea r10, [real_ip]
     STRLEN r10, rcx
-    PRINTF %1, r10, rcx
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, r10, rcx
+    APPEND r8, log_space, log_space_len
 
 %%pt2:
     ; pt. 2: identity, not supported
-    PRINTF %1, clfe_missing, clfe_missing_len
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, clfe_missing, clfe_missing_len
+    APPEND r8, log_space, log_space_len
 
 %%pt3:
     ; pt. 3: auth
@@ -426,20 +429,20 @@ section .bss
     cmp rcx, 0                            ; if empty, no auth
     je %%no_auth
 
-    PRINTF %1, r10, rcx
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, r10, rcx
+    APPEND r8, log_space, log_space_len
 
     jmp %%pt4
 
 %%no_auth:
-    PRINTF %1, clfe_missing, clfe_missing_len
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, clfe_missing, clfe_missing_len
+    APPEND r8, log_space, log_space_len
 
 %%pt4:
     ; pt. 4: timestamp
-    PRINTF %1, clfe_start_ts, clfe_start_ts_len
+    APPEND r8, clfe_start_ts, clfe_start_ts_len
 
-    push %1            ;  save %1 (r9) so it doesn't get clobbered
+    push r8            ; save write pointer so it doesn't get clobbered
 
     ; get the current wall-clock time
     ; clock_gettime(clockid, timespec)
@@ -460,16 +463,16 @@ section .bss
     mov rcx, tm_buf    ; fixed: pass struct tm*, not rs_buf
     call strftime
 
-    pop %1
+    pop r8             ; restore write pointer
 
     STRLEN rs_buf, rcx
-    PRINTF %1, rs_buf, rcx
+    APPEND r8, rs_buf, rcx
 
-    PRINTF %1, clfe_end_ts, clfe_end_ts_len
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, clfe_end_ts, clfe_end_ts_len
+    APPEND r8, log_space, log_space_len
 
 %%pt5:
-    PRINTF %1, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, log_quotation_mark, log_quotation_mark_len
 
     lea r10, [request]
     xor r9, r9
@@ -493,10 +496,10 @@ section .bss
     jmp %%req_scan
 
 %%req_print:
-    PRINTF %1, r10, r9
+    APPEND r8, r10, r9
 
-    PRINTF %1, log_quotation_mark, log_quotation_mark_len
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, log_space, log_space_len
 
 %%pt6:
     ; pt. 6: status code
@@ -504,9 +507,9 @@ section .bss
     movzx r10, word [last_status]
 
     ITOA r10, status_buf, r9
-    PRINTF %1, status_buf, r9
+    APPEND r8, status_buf, r9
 
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, log_space, log_space_len
 
 %%pt7:
     ; pt. 7: size
@@ -515,55 +518,61 @@ section .bss
     cmp rcx, 0
     je %%no_len
 
-    PRINTF %1, itoa_buf, rcx
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, itoa_buf, rcx
+    APPEND r8, log_space, log_space_len
 
     jmp %%pt8
 
 %%no_len:
-    PRINTF %1, clfe_nobytes, clfe_nobytes_len
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, clfe_nobytes, clfe_nobytes_len
+    APPEND r8, log_space, log_space_len
 
 %%pt8:
     ; pt. 8: "referer"
-    PRINTF %1, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, log_quotation_mark, log_quotation_mark_len
 
     STRLEN referer, rcx
 
     cmp rcx, 0
     je %%no_referer
 
-    PRINTF %1, referer, rcx
-    PRINTF %1, log_quotation_mark, log_quotation_mark_len
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, referer, rcx
+    APPEND r8, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, log_space, log_space_len
 
     jmp %%pt9
 
 %%no_referer:
-    PRINTF %1, clfe_missing, clfe_missing_len
-    PRINTF %1, log_quotation_mark, log_quotation_mark_len
-    PRINTF %1, log_space, log_space_len
+    APPEND r8, clfe_missing, clfe_missing_len
+    APPEND r8, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, log_space, log_space_len
 
 %%pt9:
     ; pt. 9: user agent
-    PRINTF %1, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, log_quotation_mark, log_quotation_mark_len
 
     STRLEN user_agent, rcx
 
     cmp rcx, 0
     je %%no_ua
 
-    PRINTF %1, user_agent, rcx
-    PRINTF %1, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, user_agent, rcx
+    APPEND r8, log_quotation_mark, log_quotation_mark_len
 
     jmp %%done
 
 %%no_ua:
-    PRINTF %1, clfe_missing, clfe_missing_len
-    PRINTF %1, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, clfe_missing, clfe_missing_len
+    APPEND r8, log_quotation_mark, log_quotation_mark_len
 
 %%done:
-    PRINTF %1, sysutils_newline, 1
+    APPEND r8, sysutils_newline, 1
+
+    ; flush the whole log line in one shot
+    lea rsi, [log_buffer]
+    mov rdx, r8
+    sub rdx, rsi                           ; length = write pointer - base
+    PRINTF %1, log_buffer, rdx
 
 %%end:
 %endmacro
