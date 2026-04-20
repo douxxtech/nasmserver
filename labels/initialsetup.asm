@@ -54,6 +54,9 @@ section .data
     key_loglevel          db "LOG_LEVEL", 0
     default_loglevel      db "info", 0
 
+    key_linger_to         db "LINGER_TIMEOUT", 0
+    default_linger_to     db "5", 0
+
     ; errordocs files, relatively to the document_root (empty = none)
     ; start them with a slash !
 
@@ -91,6 +94,7 @@ section .bss
     port               resw 1    ; Port number (host byte order)
     max_requests       resw 1    ; Max simultaneous connections (0-65535)
     max_age            resd 1    ; Cache-Control Max-Age value
+    linger_to          resw 1    ; Linger timeout
     use_xri            resb 1    ; Toggle for X-Real-IP
 
     ; server
@@ -219,6 +223,10 @@ initial_setup:
     ENV_DEFAULT env_path_buf, key_maxage, max_age_str, 12, default_maxage
     ATOI max_age_str, rax
     mov dword [max_age], eax
+
+    ENV_DEFAULT env_path_buf, key_linger_to, max_age_str, 12, default_linger_to
+    ATOI max_age_str, rax
+    mov dword [linger_to], eax
 
     ENV_DEFAULT env_path_buf, key_servedots, serve_dots_str, 5, default_servedots
     BOOL_FLAG serve_dots_str, serve_dots
