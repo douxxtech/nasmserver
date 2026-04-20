@@ -189,6 +189,7 @@ section .data
     log_config_port                 db "  PORT:             ", 0
     log_config_maxreqs              db "  MAX_REQUESTS:     ", 0
     log_config_maxage               db "  MAX_AGE:          ", 0
+    log_config_lingerto             db "  LINGER_TIMEOUT:   ", 0
     log_config_servername           db "  SERVER_NAME:      ", 0
     log_config_logfile              db "  LOG_FILE:         ", 0
     log_config_loglevel             db "  LOG_LEVEL:        ", 0

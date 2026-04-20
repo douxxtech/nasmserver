@@ -399,6 +399,17 @@ dbg_startup_infos:
 
     CLB
     lea r9, [log_buffer]
+    AAPPEND r9, log_config_lingerto
+    movzx r10, word [linger_to]
+    ITOA r10, itoa_buf, rcx
+    AAPPEND r9, itoa_buf
+    lea rcx, [log_buffer]
+    sub r9, rcx
+    mov rbx, r9
+    LOG_DEBUG log_buffer, r9
+
+    CLB
+    lea r9, [log_buffer]
     AAPPEND r9, log_config_servername
     AAPPEND r9, server_w_ver
     lea rcx, [log_buffer]
