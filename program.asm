@@ -203,30 +203,31 @@ _start:
     ITOA r10, current_pid_str, rcx
 
     ; set the socket options, in this case a read timeout on the socket fd
-    mov qword [drain_timeval], 5  ; tv_sec
+    movzx rax, word [linger_to]
+    mov qword [drain_timeval], rax  ; tv_sec
 
     ; setsockopt(sockfd, level, optname, optval, optlen)
     mov rax, 54
     mov rdi, r14
-    mov rsi, 1                    ; SOL_SOCKET
-    mov rdx, 20                   ; SO_RCVTIMEO
+    mov rsi, 1                      ; SOL_SOCKET
+    mov rdx, 20                     ; SO_RCVTIMEO
     lea r10, [drain_timeval]
     mov r8, 16
     syscall
 
     ; ip addr
 
-    movzx eax, byte [rsp + 4]     ; first octet
-    movzx ebx, byte [rsp + 5]     ; second
-    movzx ecx, byte [rsp + 6]     ; third
-    movzx edx, byte [rsp + 7]     ; fourth
+    movzx eax, byte [rsp + 4]       ; first octet
+    movzx ebx, byte [rsp + 5]       ; second
+    movzx ecx, byte [rsp + 6]       ; third
+    movzx edx, byte [rsp + 7]       ; fourth
 
     ; convert the binary client address to a printable string
     ; inet_ntop(af, src, dst, size)
-    mov edi, 2                    ; AF_INET
-    lea rsi, [rsp + 4]            ; pointer to sin_addr (client_addr + 4)
-    lea rdx, [client_ip_str]      ; output buffer
-    mov ecx, 16                   ; buffer size
+    mov edi, 2                      ; AF_INET
+    lea rsi, [rsp + 4]              ; pointer to sin_addr (client_addr + 4)
+    lea rdx, [client_ip_str]        ; output buffer
+    mov ecx, 16                     ; buffer size
     
     call inet_ntop
 
