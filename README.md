@@ -107,24 +107,24 @@ Copy `.env.example` to `.env` and edit as needed. All keys are optional and defa
 |---|---|---|
 | `BIND_ADDRESS` | `0.0.0.0` | IPv4 address to bind to |
 | `PORT` | `8080` | Port to listen on |
+| `MAX_REQUESTS` | `20` | Max simultaneous connections (1–65535) |
+| `LINGER_TIMEOUT` | `5` | Seconds to wait for the client to close after the response is sent |
 | `DOCUMENT_ROOT` | `.` | Document root directory, no trailing slash |
 | `INDEX_FILE` | `index.html` | File served when a directory is requested |
-| `LOG_FILE` | *(empty)* | File to write request logs instead of STDOUT |
-| `LOG_LEVEL` | `info` | Log verbosity level |
-| `MAX_AGE` | `600` | Cache expiry offset in seconds for the `Expires:` header. Sets `Pragma: no-cache` if `0` |
-| `AUTH_USER` | *(empty)* | Username for Basic Authentication. Authentication is only enabled when this is set |
-| `AUTH_PASSWORD` | *(empty)* | Password for Basic Authentication. |
-| `AUTH_REALM` | `None` | Realm for Basic Authentication. |
 | `SERVE_DOTS` | `false` | Whether `.dotfiles` and `.dotfolders/` should be served |
-| `MAX_REQUESTS` | `20` | Max simultaneous connections (1–65535) |
-| `LINGET_TIMEOUT` | `5` | Seconds to wait for the client to close after the response is sent |
+| `MAX_AGE` | `600` | Cache expiry offset in seconds for the `Expires:` header. Sets `Pragma: no-cache` if `0` |
 | `SERVER_NAME` | `NASMServer/ver` | Value for the `Server:` response header |
-| `USE_X_REAL_IP` | `false` | Use the `X-Real-IP` header for logging instead of the remote socket address |
 | `ERRORDOC_400` | *(empty)* | Error page path, relative to `DOCUMENT_ROOT`, must start with `/` |
 | `ERRORDOC_401` | *(empty)* | Same, for 401 |
 | `ERRORDOC_403` | *(empty)* | Same, for 403 |
 | `ERRORDOC_404` | *(empty)* | Same, for 404 |
 | `ERRORDOC_405` | *(empty)* | Same, for 405 |
+| `AUTH_USER` | *(empty)* | Username for Basic Authentication. Authentication is only enabled when this is set |
+| `AUTH_PASSWORD` | *(empty)* | Password for Basic Authentication |
+| `AUTH_REALM` | `None` | Realm for Basic Authentication |
+| `LOG_LEVEL` | `info` | Log verbosity level |
+| `LOG_FILE` | *(empty)* | File to write request logs instead of STDOUT |
+| `USE_X_REAL_IP` | `false` | Use the `X-Real-IP` header for logging instead of the remote socket address |
 | `USE_CHROOT` | `true` | Chroot into `DOCUMENT_ROOT` at startup for filesystem isolation. Only applies when running as root |
 | `DROP_PRIVILEGES` | `true` | Drop to `nobody` (uid 65534) after startup. Only applies when running as root |
 
