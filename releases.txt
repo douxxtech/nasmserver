@@ -14,6 +14,13 @@
 # - Release description: detailed information about the release
 # - =--- END ---=: marks the end of the release 
 
+=--- v1.14 ---=
+### What changed
+- Added `LINGER_TIMEOUT` config option to control how long the server waits for the client to disconnect after the response is sent (Default: `5` seconds). Set to `0` to wait forever. This fixes the issue where malicious actors could create an infinity of zombie processes.
+- Config file renamed from `env.example` to `.env.example`
+- Config options are now grouped by category in the example file
+=--- END ---=
+
 =--- v1.13 ---=
 ### What changed
 - Added `LOG_LEVEL` config option to control log verbosity (`none`, `info`, `debug`). Default: `info`
