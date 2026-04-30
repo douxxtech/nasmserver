@@ -70,6 +70,37 @@ else
     fail "curl response did not contain expected content (got: $RESPONSE)"
 fi
 
+# Setup Auth in config
+echo "AUTH_USER=admin" >> test-env.cfg
+echo "AUTH_PASSWORD=password123" >> test-env.cfg
+echo "AUTH_REALM=TestRealm" >> test-env.cfg
+
+kill "$SERVER_PID" 2>/dev/null
+./program -e test-env.cfg > /dev/null 2>&1 &
+SERVER_PID=$!
+sleep 1
+
+# test 5
+echo ">> Testing unauthorized access (expecting 401)..."
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" localhost:8080)
+
+if [ "$HTTP_STATUS" -eq 401 ]; then
+    pass "Correctly returned 401 Unauthorized"
+else
+    fail "Expected 401, but got $HTTP_STATUS"
+fi
+
+# test 6
+echo ">> Testing authorized access (expecting 200)..."
+# Using -u for Basic Auth
+HTTP_STATUS=$(curl -s -u admin:password123 -o /dev/null -w "%{http_code}" localhost:8080)
+
+if [ "$HTTP_STATUS" -eq 200 ]; then
+    pass "Correctly returned 200 OK with valid credentials"
+else
+    fail "Expected 200, but got $HTTP_STATUS"
+fi
+
 # summary
 echo ""
 echo "================================"
