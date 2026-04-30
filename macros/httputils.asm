@@ -366,7 +366,7 @@ section .bss
     xor r8, r8      ; offset
 
 %%auth_scan:
-    ; need at least 22 bytes left: "Authorization: Basic " (21) + 1 byte of token
+    ; need at least 22 bytes left: "authorization: Basic " (21) + 1 byte of token
     mov rax, r8
     add rax, 22
     cmp rax, %2
@@ -375,14 +375,14 @@ section .bss
     cmp byte [rsi + r8], 'A'
     jne %%auth_next
 
-    ; "Authorization: Basic " split into dwords:
-    ;   [+0]  "Auth" = 0x68747541
+    ; "authorization: Basic " split into dwords:
+    ;   [+0]  "auth" = 0x68747541
     ;   [+4]  "oriz" = 0x7a69726f
     ;   [+8]  "atio" = 0x6f697461
     ;   [+12] "n: B" = 0x42203a6e
     ;   [+16] "asic" = 0x63697361
-    ;   [+20] " "   = 0x20
-    cmp dword [rsi + r8 +  0], 0x68747541
+    ;   [+20] " "    = 0x20
+    cmp dword [rsi + r8 +  0], 0x68747561
     jne %%auth_next
 
     cmp dword [rsi + r8 +  4], 0x7a69726f
