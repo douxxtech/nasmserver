@@ -372,11 +372,11 @@ section .bss
     cmp rax, %2
     jg %%not_found
 
-    cmp byte [rsi + r8], 'A'
+    cmp byte [rsi + r8], 'a'
     jne %%auth_next
 
     ; "authorization: Basic " split into dwords:
-    ;   [+0]  "auth" = 0x68747541
+    ;   [+0]  "auth" = 0x68747561
     ;   [+4]  "oriz" = 0x7a69726f
     ;   [+8]  "atio" = 0x6f697461
     ;   [+12] "n: B" = 0x42203a6e
