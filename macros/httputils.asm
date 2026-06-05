@@ -188,7 +188,7 @@ section .bss
     jg %%fh_not_found
 
     ; first-char check before doing the full comparison
-    movzx rax, byte [%3]
+    movzx rax, byte [rel %3]
     cmp byte [rsi + r8], al
     jne %%fh_next
 
@@ -250,7 +250,7 @@ section .bss
 
 %%fh_copy:
     ; copy the measured value into the output buffer
-    lea rdi, [%5]
+    lea rdi, [rel %5]
     lea rax, [rsi + r8]
 
     APPEND rdi, rax, r9
@@ -263,7 +263,7 @@ section .bss
     jmp %%fh_scan
 
 %%fh_not_found:
-    mov byte [%5], 0   ; zero out the buffer so callers don't see stale data
+    mov byte [rel %5], 0   ; zero out the buffer so callers don't see stale data
 
 %%fh_out:
 %endmacro
@@ -447,7 +447,7 @@ section .bss
     jmp %%auth_scan
 
 %%not_found:
-    mov byte [%3], 0  ; null-term on failure (already done on success by b64_dec)
+    mov byte [rel %3], 0  ; null-term on failure (already done on success by b64_dec)
 
 %%done:
 %endmacro
@@ -519,9 +519,9 @@ section .bss
     syscall
 
     ; add offset to tv_sec
-    mov rax, [date_timespec]
+    mov rax, [rel date_timespec]
     add rax, %1
-    mov [date_timespec], rax
+    mov [rel date_timespec], rax
 
     ; gmtime_r(&tv_sec, &date_tm_buf)
     mov rdi, date_timespec

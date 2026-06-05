@@ -35,7 +35,7 @@ section .bss
 
     STRLEN %2, rcx                ; rcx = key length
 
-    lea r8, [env_buf]             ; r8  = current scan pointer
+    lea r8, [rel env_buf]             ; r8  = current scan pointer
     mov r9, r8
     add r9, rax                   ; r9 = end of buffer
 
@@ -53,7 +53,7 @@ section .bss
 
     ; try to match key: compare r8..r8+key_len with %2
     lea rsi, [r8]
-    lea rdi, [%2]
+    lea rdi, [rel %2]
 
     push rcx                  ; repe cmpsb clobbers rcx
     repe cmpsb
@@ -86,7 +86,7 @@ section .bss
 
 %%extract:
     ; rsi = pointer to value start
-    lea rdi, [%3]
+    lea rdi, [rel %3]
     mov rcx, %4
     xor rbx, rbx   ; rbx = bytes written
 
@@ -145,8 +145,8 @@ section .bss
     jne %%done     ; found it, rax already set
 
     ; copy default into out_buf
-    lea rsi, [%5]
-    lea rdi, [%3]
+    lea rsi, [rel %5]
+    lea rdi, [rel %3]
     mov rcx, %4
     xor rbx, rbx
 
