@@ -65,6 +65,21 @@ cp .env.example .env
 
 > Ports below 1024 require root or `CAP_NET_BIND_SERVICE`. Either run with `sudo`, or set `PORT` to something above 1024 in your `.env`.
 
+## Usage (Docker)
+
+```bash
+docker pull douxxtech/nasmserver:latest
+docker run -p 8080:8080 douxxtech/nasmserver:latest
+```
+
+To serve your own files, mount a local directory:
+
+```bash
+docker run -p 8080:8080 -v /path/to/your/files:/var/www/html douxxtech/nasmserver:latest
+```
+
+See [DOCKER.md](./DOCKER.md) for more options including custom config files and pinned versions.
+
 ### CLI flags
 
 | Flag | Description |
