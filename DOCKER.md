@@ -31,9 +31,6 @@ docker run -p 8080:8080 \
 
 See the [configuration section in the README](https://github.com/douxxtech/nasmserver/blob/main/README.md#configuration) for all available options.
 
-> [!NOTE]
-> `DOCUMENT_ROOT` is pre-set to `/var/www/html` in the Docker image. You don't need to set it in your config unless you're mounting files elsewhere.
-
 ## Specific versions
 
 ```bash
