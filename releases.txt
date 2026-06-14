@@ -14,6 +14,16 @@
 # - Release description: detailed information about the release
 # - =--- END ---=: marks the end of the release 
 
+=--- v1.15-rev.1 ---=
+### What changed
+**rev.1**:
+- Added Docker support. Every new release will be pushed to [douxxtech/nasmserver](https://hub.docker.com/douxxtech/nasmserver) to be used with the Docker engine.
+- Fixed some minor issues, and maybe created new ones.
+
+**v1.15**:
+- Fixed HTTP Basic Authentication not working (see #32)
+=--- END ---=
+
 =--- v1.15 ---=
 ### What changed
 - Fixed HTTP Basic Authentication not working (see #32)
