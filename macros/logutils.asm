@@ -9,223 +9,17 @@ section .data
 
     rs_fmt      db "%d/%b/%Y:%H:%M:%S %z", 0
 
-    log_space                       db " ", 0
-    log_space_len                   equ $ - log_space - 1
+    str_prefix_info                 db "[INFO] ", 0
+    str_prefix_info_len             equ $ - str_prefix_info - 1
 
-    log_quotation_mark              db 0x22, 0  ; '"'
-    log_quotation_mark_len          equ $ - log_quotation_mark - 1
+    str_prefix_warning              db "[WARNING] ", 0
+    str_prefix_warning_len          equ $ - str_prefix_warning - 1
 
-    log_two_dots                    db ":", 0
-    log_two_dots_len                equ $ - log_two_dots - 1
+    str_prefix_err                  db "[ERROR] ", 0
+    str_prefix_err_len              equ $ - str_prefix_err - 1
 
-    log_slash                       db "/", 0
-    log_slash_len                   equ $ - log_slash - 1
-
-
-    ; log level prefixes
-
-    log_prefix_info                 db "[INFO] ", 0
-    log_prefix_info_len             equ $ - log_prefix_info - 1
-
-    log_prefix_warning              db "[WARNING] ", 0
-    log_prefix_warning_len          equ $ - log_prefix_warning - 1
-
-    log_prefix_err                  db "[ERROR] ", 0
-    log_prefix_err_len              equ $ - log_prefix_err - 1
-
-    log_prefix_dbg                  db "* ", 0
-    log_prefix_dbg_len              equ $ - log_prefix_dbg - 1
-
-    ; startup banner
-    log_started_nasmserver          db "Started the NASMServer static files HTTP server.", 0xa, 0
-    log_started_nasmserver_len      equ $ - log_started_nasmserver - 1
-
-
-    ; startup checks
-    log_startup_ok                  db "Startup checks passed", 0
-    log_startup_ok_len              equ $ - log_startup_ok - 1
-
-    log_check_docroot_missing       db "document_root does not exist or is not a directory", 0
-    log_check_docroot_missing_len   equ $ - log_check_docroot_missing - 1
-
-    log_check_docroot_perms         db "document_root is not readable/accessible", 0
-    log_check_docroot_perms_len     equ $ - log_check_docroot_perms - 1
-
-    log_check_errordoc_missing      db "Errordoc file not found (requests will get empty error pages)", 0
-    log_check_errordoc_missing_len  equ $ - log_check_errordoc_missing - 1
-
-    log_check_port_privileged       db "Port < 1024 might require root privileges", 0
-    log_check_port_privileged_len   equ $ - log_check_port_privileged - 1
-
-    log_log_file_not_opened         db "Failed to open the provided log file (missing permissions?). STDOUT will be used instead.", 0
-    log_log_file_not_opened_len     equ $ - log_log_file_not_opened - 1
-
-    log_chroot_noroot               db "Not able to chroot since we're not root", 0
-    log_chroot_noroot_len           equ $ - log_chroot_noroot - 1
-
-    log_nobody_noroot               db "Not able to set uid to nobody since we're not root", 0
-    log_nobody_noroot_len           equ $ - log_nobody_noroot - 1
-
-    ; startup errors / warnings 
-    log_fail_read_env               db "Failed to read the provided configuration file path", 0
-    log_fail_read_env_len           equ $ - log_fail_read_env - 1
-
-    log_fail_build_addr             db "Failed to parse the provided BIND_ADDRESS. Make sure to provide a valid IPv4 address.", 0
-    log_fail_build_addr_len         equ $ - log_fail_build_addr - 1
-
-    log_fail_socket                 db "Failed to open socket", 0
-    log_fail_socket_len             equ $ - log_fail_socket - 1
-
-    log_fail_setsockopt             db "Failed to set socket options", 0
-    log_fail_setsockopt_len         equ $ - log_fail_setsockopt - 1
-
-    log_fail_bind                   db "Failed to bind to port", 0
-    log_fail_bind_len               equ $ - log_fail_bind - 1
-
-    log_fail_accept                 db "Failed to accept connection", 0
-    log_fail_accept_len             equ $ - log_fail_accept - 1
-
-    log_listening_on                db "Listening on ", 0
-    log_listening_on_len            equ $ - log_listening_on - 1
-
-    ; request logging
-    ; common log format extended
-    clfe_missing                    db "-", 0
-    clfe_missing_len                equ $ - clfe_missing - 1
-
-    clfe_start_ts                   db "[", 0
-    clfe_start_ts_len               equ $ - clfe_start_ts - 1
-
-    clfe_end_ts                     db "]", 0
-    clfe_end_ts_len                 equ $ - clfe_end_ts - 1
-
-    clfe_nobytes                    db "0", 0
-    clfe_nobytes_len                equ $ - clfe_nobytes - 1
-
-    ; HTTP status messages
-    log_status_200                  db "200 OK", 0xa, 0
-    log_status_200_len              equ $ - log_status_200 - 1
-
-    log_status_304                  db "304 Not Modified", 0xa, 0
-    log_status_304_len              equ $ - log_status_304 - 1
-
-    log_status_400                  db "400 Bad Request", 0xa, 0
-    log_status_400_len              equ $ - log_status_400 - 1
-
-    log_status_401                  db "401 Unauthorized", 0xa, 0
-    log_status_401_len              equ $ - log_status_401 - 1
-
-    log_status_403                  db "403 Forbidden", 0xa, 0
-    log_status_403_len              equ $ - log_status_403 - 1
-
-    log_status_404                  db "404 Not Found", 0xa, 0
-    log_status_404_len              equ $ - log_status_404 - 1
-
-    log_status_405                  db "405 Method Not Allowed", 0xa, 0
-    log_status_405_len              equ $ - log_status_405 - 1
-
-
-    ; runtime logs
-    log_too_many_concurrent         db "Rejected request: too many concurrent requests", 0
-    log_too_many_concurrent_len     equ $ - log_too_many_concurrent - 1
-
-    log_stopping                    db "Stopping... (signal received)", 0
-    log_stopping_len                equ $ - log_stopping - 1
-
-    log_child_created_p1            db "Started new child (", 0
-    log_child_created_p2            db ") to handle request from ", 0
-
-    log_child_exit_p1               db "Exiting child (", 0
-    log_child_exit_p2               db "): request served", 0
-
-    log_method_head                 db "Resolved method to HEAD", 0
-    log_method_head_len             equ $ - log_method_head - 1
-
-    log_method_get                  db "Resolved method to GET", 0
-    log_method_get_len              equ $ - log_method_get - 1
-
-    log_path_resolved               db "Resolved path to ", 0
-
-    log_dotfile_blocked             db "Dotfile access blocked: ", 0
-
-    log_replying_with_code          db "Replying to request with status code ", 0
-
-    log_sent_bytes_p1               db "Replying to request with ", 0
-    log_sent_bytes_p2               db " bytes (body)", 0
-
-    log_process_reaped              db "Process reaped, current count: ", 0
-
-    log_chroot_failed_p1            db "Failed to chroot into ", 0
-    log_chroot_failed_p2            db ", continuing anyways...", 0
-
-    log_chroot_succeeded            db "Successfully chroot-ed into ", 0 
-
-    log_errordoc_paths_rebuilt      db "Errordoc paths rebuilt", 0
-    log_errordoc_paths_rebuilt_len  equ $ - log_errordoc_paths_rebuilt - 1
-
-    log_nobody_failed               db "Failed to drop privileges to nobody, continuing anyways...", 0
-    log_nobody_failed_len           equ $ - log_nobody_failed - 1
-
-    log_nobody_succeeded            db "Successfully dropped privileges to nobody", 0
-    log_nobody_succeeded_len        equ $ - log_nobody_succeeded - 1
-
-    log_success_sighandler_p1       db "Successfully registered the ", 0
-    log_success_sighandler_p2       db " signal handler", 0
-
-    log_fail_sighandler_p1          db "Failed to register the ", 0
-    log_fail_sighandler_p2          db ", continuing anyways...", 0
-
-    log_sighanlder_sigterm          db "SIGTERM", 0
-    log_sighanlder_sigint           db "SIGINT", 0
-    log_sighanlder_sigchld          db "SIGCHLD", 0
-
-    log_process_started_p1          db "Main process started by UID ", 0
-    log_process_started_p2          db " with PID ", 0
-
-    log_config_header               db "Loaded config:", 0
-    log_config_docroot              db "  DOCUMENT_ROOT:    ", 0
-    log_config_index                db "  INDEX_FILE:       ", 0
-    log_config_bindaddr             db "  BIND_ADDRESS:     ", 0
-    log_config_port                 db "  PORT:             ", 0
-    log_config_maxreqs              db "  MAX_REQUESTS:     ", 0
-    log_config_maxage               db "  MAX_AGE:          ", 0
-    log_config_lingerto             db "  LINGER_TIMEOUT:   ", 0
-    log_config_servername           db "  SERVER_NAME:      ", 0
-    log_config_logfile              db "  LOG_FILE:         ", 0
-    log_config_loglevel             db "  LOG_LEVEL:        ", 0
-    log_config_servedots            db "  SERVE_DOTS:       ", 0
-    log_config_usexri               db "  USE_X_REAL_IP:    ", 0
-    log_config_usechroot            db "  USE_CHROOT:       ", 0
-    log_config_noperms              db "  DROP_PRIVILEGES:  ", 0
-    log_config_authrealm            db "  AUTH_REALM:       ", 0
-    log_config_authuser             db "  AUTH_USER:        ", 0
-    log_config_authpass             db "  AUTH_PASSWORD:    ", 0
-    log_config_authpass_set         db "********", 0       ; shown if password is set
-    log_config_err400               db "  ERRORDOC_400:     ", 0
-    log_config_err401               db "  ERRORDOC_401:     ", 0
-    log_config_err403               db "  ERRORDOC_403:     ", 0
-    log_config_err404               db "  ERRORDOC_404:     ", 0
-    log_config_err405               db "  ERRORDOC_405:     ", 0
-
-    ; CLI / arguments / help
-    log_arg_not_recognized_p1       db "Argument '", 0
-    log_arg_not_recognized_p1_len   equ $ - log_arg_not_recognized_p1 - 1
-
-    log_arg_not_recognized_p2       db "' is not recognized by NASMServer.", 0xa, \
-                                       "Run nasmserver -h to see the list of available flags and arguments.", 0
-    log_arg_not_recognized_p2_len   equ $ - log_arg_not_recognized_p2 - 1
-
-    log_flag_e_error                db "Missing value after '-e'. Usage: -e <config.env>", 0
-    log_flag_e_error_len            equ $ - log_flag_e_error - 1
-
-    log_help_text                   db "Usage: nasmserver [-h] [-e <config.env>]", 0xa, \
-                                       "  -h              show this help", 0xa, \
-                                       "  -v              show the current version", 0xa, \
-                                       "  -e <config>     path to the .env config file", 0xa, 0
-    log_help_text_len               equ $ - log_help_text - 1
-
-    log_version                     db "Server version: ", 0
-    log_version_len                 equ $ - log_version - 1
+    str_prefix_dbg                  db "* ", 0
+    str_prefix_dbg_len              equ $ - str_prefix_dbg - 1
 
 
 section .bss
@@ -278,12 +72,12 @@ section .bss
 ;   Clobbers: rax, rdi, rsi, rdx, rcx
 %macro LOG_INFO 2
     ; check if we should log or not
-    cmp byte [rel log_level], 0  ; log lvl none = skip
+    cmp byte [rel str_level], 0  ; log lvl none = skip
     je %%end
 
 %%log:
     PRINT_TIMESTAMP
-    PRINT log_prefix_info, log_prefix_info_len
+    PRINT str_prefix_info, str_prefix_info_len
     PRINTN %1, %2
 
 %%end:
@@ -297,12 +91,12 @@ section .bss
 ;   Clobbers: rax, rdi, rsi, rdx, rcx
 %macro LOG_WARNING 2
     ; check if we should log or not
-    cmp byte [rel log_level], 0  ; log lvl none = skip
+    cmp byte [rel str_level], 0  ; log lvl none = skip
     je %%end
 
 %%log:
     PRINT_TIMESTAMP
-    PRINT log_prefix_warning, log_prefix_warning_len
+    PRINT str_prefix_warning, str_prefix_warning_len
     PRINTN %1, %2
 
 %%end:
@@ -316,12 +110,12 @@ section .bss
 ;   Clobbers: rax, rdi, rsi, rdx, rcx
 %macro LOG_ERR 2
     ; check if we should log or not
-    cmp byte [rel log_level], 0  ; log lvl none = skip
+    cmp byte [rel str_level], 0  ; log lvl none = skip
     je %%end
 
 %%log:
     PRINT_TIMESTAMP
-    PRINTF 2, log_prefix_err, log_prefix_err_len
+    PRINTF 2, str_prefix_err, str_prefix_err_len
     PRINTF 2, %1, %2
     PRINTF 2, sysutils_newline, 1
 
@@ -336,16 +130,16 @@ section .bss
 ;   Clobbers: rax, rdi, rsi, rdx, rcx
 %macro LOG_DEBUG 2
     ; check if we should log or not
-    cmp byte [rel log_level], 2  ; log lvl none = skip
+    cmp byte [rel str_level], 2  ; log lvl none = skip
     jne %%end
 
 %%log:
-    PRINTF 2, log_prefix_dbg, log_prefix_dbg_len
+    PRINTF 2, str_prefix_dbg, str_prefix_dbg_len
 
     STRLEN current_pid_str, rcx
     PRINTF 2, current_pid_str, rcx
-    PRINTF 2, log_two_dots, log_two_dots_len
-    PRINTF 2, log_space, log_space_len
+    PRINTF 2, str_two_dots, str_two_dots_len
+    PRINTF 2, str_space, str_space_len
     PRINTF 2, %1, %2
     PRINTF 2, sysutils_newline, 1
 
@@ -361,20 +155,20 @@ section .bss
 ;   Clobbers: rax, rbx, rdi, rsi, rdx, rcx, r9
 %macro LOG_PORT 0
     ; check if we should log or not
-    cmp byte [rel log_level], 0  ; log lvl none = skip
+    cmp byte [rel str_level], 0  ; log lvl none = skip
     je %%end
 
 %%log:
     ; this mess prints the port log
     PRINT_TIMESTAMP
 
-    PRINT log_prefix_info, log_prefix_info_len
-    PRINT log_listening_on, log_listening_on_len
+    PRINT str_prefix_info, str_prefix_info_len
+    PRINT str_listening_on, str_listening_on_len
 
     STRLEN bind_addr_str, r9
     PRINT bind_addr_str, r9                        ; x.x.x.x 
 
-    PRINT log_two_dots, log_two_dots_len           ; ":"
+    PRINT str_two_dots, str_two_dots_len           ; ":"
 
     ; port int to ascii
     movzx rbx, word [rel port]
@@ -403,10 +197,10 @@ section .bss
 %macro LOG_REQUEST_CLFE 1
 
     ; check if we should log or not
-    cmp qword [rel log_file], 1
+    cmp qword [rel str_file], 1
     jne %%pt1                ; log to file = log
 
-    cmp byte [rel log_level], 0  ; not to file + log lvl none = skip
+    cmp byte [rel str_level], 0  ; not to file + log lvl none = skip
     je %%end
 
 
@@ -418,12 +212,12 @@ section .bss
     lea r10, [rel real_ip]
     STRLEN r10, rcx
     APPEND r8, r10, rcx
-    APPEND r8, log_space, log_space_len
+    APPEND r8, str_space, str_space_len
 
 %%pt2:
     ; pt. 2: identity, not supported
     APPEND r8, clfe_missing, clfe_missing_len
-    APPEND r8, log_space, log_space_len
+    APPEND r8, str_space, str_space_len
 
 %%pt3:
     ; pt. 3: auth
@@ -434,13 +228,13 @@ section .bss
     je %%no_auth
 
     APPEND r8, r10, rcx
-    APPEND r8, log_space, log_space_len
+    APPEND r8, str_space, str_space_len
 
     jmp %%pt4
 
 %%no_auth:
     APPEND r8, clfe_missing, clfe_missing_len
-    APPEND r8, log_space, log_space_len
+    APPEND r8, str_space, str_space_len
 
 %%pt4:
     ; pt. 4: timestamp
@@ -473,10 +267,10 @@ section .bss
     APPEND r8, rs_buf, rcx
 
     APPEND r8, clfe_end_ts, clfe_end_ts_len
-    APPEND r8, log_space, log_space_len
+    APPEND r8, str_space, str_space_len
 
 %%pt5:
-    APPEND r8, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, str_quotation_mark, str_quotation_mark_len
 
     lea r10, [rel request]
     xor r9, r9
@@ -502,8 +296,8 @@ section .bss
 %%req_print:
     APPEND r8, r10, r9
 
-    APPEND r8, log_quotation_mark, log_quotation_mark_len
-    APPEND r8, log_space, log_space_len
+    APPEND r8, str_quotation_mark, str_quotation_mark_len
+    APPEND r8, str_space, str_space_len
 
 %%pt6:
     ; pt. 6: status code
@@ -513,7 +307,7 @@ section .bss
     ITOA r10, status_buf, r9
     APPEND r8, status_buf, r9
 
-    APPEND r8, log_space, log_space_len
+    APPEND r8, str_space, str_space_len
 
 %%pt7:
     ; pt. 7: size
@@ -523,17 +317,17 @@ section .bss
     je %%no_len
 
     APPEND r8, itoa_buf, rcx
-    APPEND r8, log_space, log_space_len
+    APPEND r8, str_space, str_space_len
 
     jmp %%pt8
 
 %%no_len:
     APPEND r8, clfe_nobytes, clfe_nobytes_len
-    APPEND r8, log_space, log_space_len
+    APPEND r8, str_space, str_space_len
 
 %%pt8:
     ; pt. 8: "referer"
-    APPEND r8, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, str_quotation_mark, str_quotation_mark_len
 
     STRLEN referer, rcx
 
@@ -541,19 +335,19 @@ section .bss
     je %%no_referer
 
     APPEND r8, referer, rcx
-    APPEND r8, log_quotation_mark, log_quotation_mark_len
-    APPEND r8, log_space, log_space_len
+    APPEND r8, str_quotation_mark, str_quotation_mark_len
+    APPEND r8, str_space, str_space_len
 
     jmp %%pt9
 
 %%no_referer:
     APPEND r8, clfe_missing, clfe_missing_len
-    APPEND r8, log_quotation_mark, log_quotation_mark_len
-    APPEND r8, log_space, log_space_len
+    APPEND r8, str_quotation_mark, str_quotation_mark_len
+    APPEND r8, str_space, str_space_len
 
 %%pt9:
     ; pt. 9: user agent
-    APPEND r8, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, str_quotation_mark, str_quotation_mark_len
 
     STRLEN user_agent, rcx
 
@@ -561,13 +355,13 @@ section .bss
     je %%no_ua
 
     APPEND r8, user_agent, rcx
-    APPEND r8, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, str_quotation_mark, str_quotation_mark_len
 
     jmp %%done
 
 %%no_ua:
     APPEND r8, clfe_missing, clfe_missing_len
-    APPEND r8, log_quotation_mark, log_quotation_mark_len
+    APPEND r8, str_quotation_mark, str_quotation_mark_len
 
 %%done:
     APPEND r8, sysutils_newline, 1

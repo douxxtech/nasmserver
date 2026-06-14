@@ -14,7 +14,7 @@ section .text
     global warn_sighandler_fail
 
 dbg_new_child:
-    cmp byte [rel log_level], 2
+    cmp byte [rel str_level], 2
     jne dbg_skip
 
     CLB
@@ -24,9 +24,9 @@ dbg_new_child:
     ITOA r10, current_pid_str, rcx
 
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_child_created_p1
+    AAPPEND r9, str_child_created_p1
     AAPPEND r9, current_pid_str
-    AAPPEND r9, log_child_created_p2
+    AAPPEND r9, str_child_created_p2
     AAPPEND r9, client_ip_str
     mov byte [r9], 0
 
@@ -39,15 +39,15 @@ dbg_new_child:
     ret                               ; dbg_new_child return point
 
 dbg_child_exit:
-    cmp byte [rel log_level], 2
+    cmp byte [rel str_level], 2
     jne dbg_skip
 
     CLB
 
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_child_exit_p1
+    AAPPEND r9, str_child_exit_p1
     AAPPEND r9, current_pid_str
-    AAPPEND r9, log_child_exit_p2
+    AAPPEND r9, str_child_exit_p2
     mov byte [r9], 0
 
     lea rcx, [rel log_buffer]
@@ -59,13 +59,13 @@ dbg_child_exit:
     ret                               ; dbg_child_exit return point
 
 dbg_path_resolved:
-    cmp byte [rel log_level], 2
+    cmp byte [rel str_level], 2
     jne dbg_skip
 
     CLB
 
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_path_resolved
+    AAPPEND r9, str_path_resolved
 
     lea rdi, [rel path]
     STRLEN rdi, rcx
@@ -79,13 +79,13 @@ dbg_path_resolved:
     ret                            ; dbg_path_resolved return point
 
 dbg_dotfile_blocked:
-    cmp byte [rel log_level], 2
+    cmp byte [rel str_level], 2
     jne dbg_skip
 
     CLB
 
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_dotfile_blocked
+    AAPPEND r9, str_dotfile_blocked
 
     lea rdi, [rel path]
     STRLEN rdi, rcx
@@ -99,7 +99,7 @@ dbg_dotfile_blocked:
     ret                              ; dbg_dotfile_blocked return point
 
 dbg_status_code:
-    cmp byte [rel log_level], 2
+    cmp byte [rel str_level], 2
     jne dbg_skip
 
     mov r10, rdi
@@ -110,7 +110,7 @@ dbg_status_code:
     CLB
 
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_replying_with_code
+    AAPPEND r9, str_replying_with_code
     AAPPEND r9, itoa_buf
 
     lea rcx, [rel log_buffer]
@@ -123,7 +123,7 @@ dbg_status_code:
     ret                               ; dbg_status_code return point
 
 dbg_bytes_sent:
-    cmp byte [rel log_level], 2
+    cmp byte [rel str_level], 2
     jne dbg_skip
 
     mov r10, rax
@@ -133,9 +133,9 @@ dbg_bytes_sent:
 
     lea r9, [rel log_buffer]
 
-    AAPPEND r9, log_sent_bytes_p1
+    AAPPEND r9, str_sent_bytes_p1
     AAPPEND r9, itoa_buf
-    AAPPEND r9, log_sent_bytes_p2
+    AAPPEND r9, str_sent_bytes_p2
 
     lea rcx, [rel log_buffer]
     sub r9, rcx
@@ -146,7 +146,7 @@ dbg_bytes_sent:
     ret                            ; dbg_bytes_sent return point
 
 dbg_process_reaped:
-    cmp byte [rel log_level], 2
+    cmp byte [rel str_level], 2
     jne dbg_skip
 
     CLB
@@ -156,13 +156,13 @@ dbg_process_reaped:
 
     lea r9, [rel log_buffer]
 
-    AAPPEND r9, log_process_reaped
+    AAPPEND r9, str_process_reaped
     AAPPEND r9, itoa_buf
 
     movzx r10, word [rel max_requests]
     ITOA r10, itoa_buf, rcx
 
-    AAPPEND r9, log_slash
+    AAPPEND r9, str_slash
     AAPPEND r9, itoa_buf
 
     lea rcx, [rel log_buffer]
@@ -174,14 +174,14 @@ dbg_process_reaped:
     ret                              ; dbg_process_reaped return point
 
 dbg_chroot_success:
-    cmp byte [rel log_level], 2
+    cmp byte [rel str_level], 2
     jne dbg_skip
 
     CLB
 
     lea r9, [rel log_buffer]
 
-    AAPPEND r9, log_chroot_succeeded
+    AAPPEND r9, str_chroot_succeeded
     AAPPEND r9, document_root
 
     lea rcx, [rel log_buffer]
@@ -193,16 +193,16 @@ dbg_chroot_success:
     ret                                ; warn_chroot_fail return point
 
 warn_chroot_fail:                     ; yea thats a warning but meh
-    cmp byte [rel log_level], 0
+    cmp byte [rel str_level], 0
     je dbg_skip
 
     CLB
 
     lea r9, [rel log_buffer]
 
-    AAPPEND r9, log_chroot_failed_p1
+    AAPPEND r9, str_chroot_failed_p1
     AAPPEND r9, document_root
-    AAPPEND r9, log_chroot_failed_p2
+    AAPPEND r9, str_chroot_failed_p2
 
     lea rcx, [rel log_buffer]
     sub r9, rcx
@@ -213,7 +213,7 @@ warn_chroot_fail:                     ; yea thats a warning but meh
     ret                               ; warn_chroot_fail return point
 
 dbg_sighandler_success:
-    cmp byte [rel log_level], 0
+    cmp byte [rel str_level], 0
     je dbg_skip
 
     mov r10, rax             ; rax content: 17 = sigchld, 15 = sigterm, 2 = sigint
@@ -222,7 +222,7 @@ dbg_sighandler_success:
 
     lea r9, [rel log_buffer]
 
-    AAPPEND r9, log_success_sighandler_p1
+    AAPPEND r9, str_success_sighandler_p1
 
     cmp r10, 17
     je .sigchld
@@ -236,19 +236,19 @@ dbg_sighandler_success:
     je dbg_skip              ; if its something unexpected, just skip
 
 .sigchld:
-    AAPPEND r9, log_sighanlder_sigchld
+    AAPPEND r9, str_sighanlder_sigchld
     jmp .end
 
 .sigterm:
-    AAPPEND r9, log_sighanlder_sigterm
+    AAPPEND r9, str_sighanlder_sigterm
     jmp .end
 
 .sigint:
-    AAPPEND r9, log_sighanlder_sigint
+    AAPPEND r9, str_sighanlder_sigint
     jmp .end
 
 .end:
-    AAPPEND r9, log_success_sighandler_p2
+    AAPPEND r9, str_success_sighandler_p2
 
     lea rcx, [rel log_buffer]
     sub r9, rcx
@@ -260,7 +260,7 @@ dbg_sighandler_success:
 
 
 warn_sighandler_fail:
-    cmp byte [rel log_level], 0
+    cmp byte [rel str_level], 0
     je dbg_skip
 
     mov r10, rax             ; rax content: 17 = sigchld, 15 = sigterm, 2 = sigint
@@ -269,7 +269,7 @@ warn_sighandler_fail:
 
     lea r9, [rel log_buffer]
 
-    AAPPEND r9, log_fail_sighandler_p1
+    AAPPEND r9, str_fail_sighandler_p1
 
     cmp r10, 17
     je .sigchld
@@ -283,19 +283,19 @@ warn_sighandler_fail:
     je dbg_skip              ; if its something unexpected, just skip
 
 .sigchld:
-    AAPPEND r9, log_sighanlder_sigchld
+    AAPPEND r9, str_sighanlder_sigchld
     jmp .end
 
 .sigterm:
-    AAPPEND r9, log_sighanlder_sigterm
+    AAPPEND r9, str_sighanlder_sigterm
     jmp .end
 
 .sigint:
-    AAPPEND r9, log_sighanlder_sigint
+    AAPPEND r9, str_sighanlder_sigint
     jmp .end
 
 .end:
-    AAPPEND r9, log_fail_sighandler_p2
+    AAPPEND r9, str_fail_sighandler_p2
 
     lea rcx, [rel log_buffer]
     sub r9, rcx
@@ -306,7 +306,7 @@ warn_sighandler_fail:
     ret                                    ; warn_sighandler_fail return point
 
 dbg_startup_infos:
-    cmp byte [rel log_level], 2
+    cmp byte [rel str_level], 2
     jne dbg_skip
 
 .pid_uid:
@@ -317,9 +317,9 @@ dbg_startup_infos:
 
     lea r9, [rel log_buffer]
 
-    AAPPEND r9, log_process_started_p1
+    AAPPEND r9, str_process_started_p1
     AAPPEND r9, itoa_buf
-    AAPPEND r9, log_process_started_p2
+    AAPPEND r9, str_process_started_p2
     AAPPEND r9, current_pid_str
 
     lea rcx, [rel log_buffer]
@@ -331,7 +331,7 @@ dbg_startup_infos:
 .config:
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_header
+    AAPPEND r9, str_config_header
     lea rcx, [rel log_buffer]
     sub r9, rcx
     mov rbx, r9
@@ -339,7 +339,7 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_docroot
+    AAPPEND r9, str_config_docroot
     AAPPEND r9, document_root
     lea rcx, [rel log_buffer]
     sub r9, rcx
@@ -348,7 +348,7 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_index
+    AAPPEND r9, str_config_index
     AAPPEND r9, index_file
     lea rcx, [rel log_buffer]
     sub r9, rcx
@@ -357,7 +357,7 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_bindaddr
+    AAPPEND r9, str_config_bindaddr
     AAPPEND r9, bind_addr_str
     lea rcx, [rel log_buffer]
     sub r9, rcx
@@ -366,7 +366,7 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_port
+    AAPPEND r9, str_config_port
     movzx r10, word [rel port]
     ITOA r10, itoa_buf, rcx
     AAPPEND r9, itoa_buf
@@ -377,7 +377,7 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_maxreqs
+    AAPPEND r9, str_config_maxreqs
     movzx r10, word [rel max_requests]
     ITOA r10, itoa_buf, rcx
     AAPPEND r9, itoa_buf
@@ -388,7 +388,7 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_maxage
+    AAPPEND r9, str_config_maxage
     mov r10d, dword [rel max_age]
     ITOA r10, itoa_buf, rcx
     AAPPEND r9, itoa_buf
@@ -399,7 +399,7 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_lingerto
+    AAPPEND r9, str_config_lingerto
     movzx r10, word [rel linger_to]
     ITOA r10, itoa_buf, rcx
     AAPPEND r9, itoa_buf
@@ -410,7 +410,7 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_servername
+    AAPPEND r9, str_config_servername
     AAPPEND r9, server_w_ver
     lea rcx, [rel log_buffer]
     sub r9, rcx
@@ -419,8 +419,8 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_logfile
-    AAPPEND r9, log_file_path
+    AAPPEND r9, str_config_logfile
+    AAPPEND r9, str_file_path
     lea rcx, [rel log_buffer]
     sub r9, rcx
     mov rbx, r9
@@ -428,8 +428,8 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_loglevel
-    AAPPEND r9, log_level_str
+    AAPPEND r9, str_config_loglevel
+    AAPPEND r9, str_level_str
     lea rcx, [rel log_buffer]
     sub r9, rcx
     mov rbx, r9
@@ -437,7 +437,7 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_servedots
+    AAPPEND r9, str_config_servedots
     AAPPEND r9, serve_dots_str
     lea rcx, [rel log_buffer]
     sub r9, rcx
@@ -446,7 +446,7 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_usexri
+    AAPPEND r9, str_config_usexri
     AAPPEND r9, use_xri_str
     lea rcx, [rel log_buffer]
     sub r9, rcx
@@ -455,7 +455,7 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_usechroot
+    AAPPEND r9, str_config_usechroot
     AAPPEND r9, use_chroot_str
     lea rcx, [rel log_buffer]
     sub r9, rcx
@@ -464,7 +464,7 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_noperms
+    AAPPEND r9, str_config_noperms
     AAPPEND r9, be_nobody_str
     lea rcx, [rel log_buffer]
     sub r9, rcx
@@ -473,7 +473,7 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_authrealm
+    AAPPEND r9, str_config_authrealm
     AAPPEND r9, auth_realm
     lea rcx, [rel log_buffer]
     sub r9, rcx
@@ -482,7 +482,7 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_authuser
+    AAPPEND r9, str_config_authuser
     AAPPEND r9, auth_username
     lea rcx, [rel log_buffer]
     sub r9, rcx
@@ -492,10 +492,10 @@ dbg_startup_infos:
     ; auth_password: show ****** if set, empty if not
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_authpass
+    AAPPEND r9, str_config_authpass
     cmp byte [rel auth_password], 0
     je .config_pass_empty
-    AAPPEND r9, log_config_authpass_set
+    AAPPEND r9, str_config_authpass_set
 .config_pass_empty:
     lea rcx, [rel log_buffer]
     sub r9, rcx
@@ -504,7 +504,7 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_err400
+    AAPPEND r9, str_config_err400
     AAPPEND r9, errordoc_400_path
     lea rcx, [rel log_buffer]
     sub r9, rcx
@@ -513,7 +513,7 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_err401
+    AAPPEND r9, str_config_err401
     AAPPEND r9, errordoc_401_path
     lea rcx, [rel log_buffer]
     sub r9, rcx
@@ -522,7 +522,7 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_err403
+    AAPPEND r9, str_config_err403
     AAPPEND r9, errordoc_403_path
     lea rcx, [rel log_buffer]
     sub r9, rcx
@@ -531,7 +531,7 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_err404
+    AAPPEND r9, str_config_err404
     AAPPEND r9, errordoc_404_path
     lea rcx, [rel log_buffer]
     sub r9, rcx
@@ -540,7 +540,7 @@ dbg_startup_infos:
 
     CLB
     lea r9, [rel log_buffer]
-    AAPPEND r9, log_config_err405
+    AAPPEND r9, str_config_err405
     AAPPEND r9, errordoc_405_path
     lea rcx, [rel log_buffer]
     sub r9, rcx

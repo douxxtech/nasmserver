@@ -112,10 +112,10 @@ section .bss
     auth_realm         resb 129  ; HTTP 1.0 Basic Auth Realm
 
     ; logs
-    log_level_str      resb 6    ; "debug\0"
-    log_level          resb 1    ; 0 = none, 1 = normal, 2 = verbose
-    log_file_path      resb 129  ; Path to access/error log
-    log_file           resq 1    ; Log file descriptor (64-bit)
+    str_level_str      resb 6    ; "debug\0"
+    str_level          resb 1    ; 0 = none, 1 = normal, 2 = verbose
+    str_file_path      resb 129  ; Path to access/error log
+    str_file           resq 1    ; Log file descriptor (64-bit)
 
     ; errordocs
     errordoc_400       resb 129
@@ -241,11 +241,11 @@ initial_setup:
     BOOL_FLAG be_nobody_str, be_nobody
 
     ; process the log level
-    ENV_DEFAULT env_path_buf, key_loglevel, log_level_str, 6, default_loglevel
-    call .parse_log_level
+    ENV_DEFAULT env_path_buf, key_loglevel, str_level_str, 6, default_loglevel
+    call .parse_str_level
     
     ; open the log file
-    ENV_DEFAULT env_path_buf, key_logfile, log_file_path, 129, default_logfile
+    ENV_DEFAULT env_path_buf, key_logfile, str_file_path, 129, default_logfile
     call .open_logfile
 
     ENV_DEFAULT env_path_buf, key_bindaddr, bind_addr_str, 16, default_bindaddr
@@ -285,26 +285,26 @@ initial_setup:
     ret  ; .build_server_name return point
 
 .open_logfile:
-    cmp byte [rel log_file_path], 0
-    je .no_log_file
+    cmp byte [rel str_file_path], 0
+    je .no_str_file
 
-    OPEN_FILE_A log_file_path
+    OPEN_FILE_A str_file_path
 
     cmp rax, 0
-    jl .no_log_file              ; failed to open / create it
+    jl .no_str_file              ; failed to open / create it
 
-    mov qword [rel log_file], rax
+    mov qword [rel str_file], rax
 
-    jmp .log_file_end
+    jmp .str_file_end
 
-.no_log_file:
-    mov qword [rel log_file], 1  ; no log file = stdout
+.no_str_file:
+    mov qword [rel str_file], 1  ; no log file = stdout
 
-.log_file_end:
+.str_file_end:
     ret  ; open_logfile len
 
-.parse_log_level:
-    lea rax, [rel log_level_str]
+.parse_str_level:
+    lea rax, [rel str_level_str]
 
     ; "debug"
     cmp dword [rax], 'debu'
@@ -313,41 +313,41 @@ initial_setup:
     cmp byte [rax+4], 'g'
     jne .check_none
 
-    mov byte [rel log_level], 2
+    mov byte [rel str_level], 2
 
-    jmp .log_level_end
+    jmp .str_level_end
 
 .check_none:
     ; "none"
     cmp dword [rax], 'none'
     jne .check_info
 
-    mov byte [rel log_level], 0
+    mov byte [rel str_level], 0
     
-    jmp .log_level_end
+    jmp .str_level_end
 
 .check_info:
     ; "info" or anything unrecognized = 0
-    mov byte [rel log_level], 1
+    mov byte [rel str_level], 1
     ret
 
-.log_level_end:
-    ret  ; .parse_log_level return point
+.str_level_end:
+    ret  ; .parse_str_level return point
 
 .failed_read_file:
-    LOG_ERR log_fail_read_env, log_fail_read_env_len
+    LOG_ERR str_fail_read_env, str_fail_read_env_len
     EXIT 1
 
 .bad_bind_addr:
-    LOG_ERR log_fail_build_addr, log_fail_build_addr_len
+    LOG_ERR str_fail_build_addr, str_fail_build_addr_len
     EXIT 1
 
 .display_help:
-    PRINTN log_help_text, log_help_text_len
+    PRINTN str_help_text, str_help_text_len
     EXIT 0
 
 .display_version:
-    PRINT log_version, log_version_len
+    PRINT str_version, str_version_len
     STRLEN server_w_ver, rcx
     PRINTN server_w_ver, rcx
     EXIT 0
