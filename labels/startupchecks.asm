@@ -18,7 +18,7 @@ startup_checks:
     cmp rax, 2
     je .check_docroot_perms
 
-    LOG_ERR log_check_docroot_missing, log_check_docroot_missing_len
+    LOG_ERR str_check_docroot_missing, str_check_docroot_missing_len
     EXIT 1
 
 .check_docroot_perms:
@@ -33,7 +33,7 @@ startup_checks:
     cmp rax, 0
     je .check_errordocs
 
-    LOG_ERR log_check_docroot_perms, log_check_docroot_perms_len
+    LOG_ERR str_check_docroot_perms, str_check_docroot_perms_len
     EXIT 1
 
 .check_errordocs:
@@ -49,7 +49,7 @@ startup_checks:
     cmp rax, 1
     je .check_errordoc_401
 
-    LOG_WARNING log_check_errordoc_missing, log_check_errordoc_missing_len
+    LOG_WARNING str_check_errordoc_missing, str_check_errordoc_missing_len
 
 .check_errordoc_401:
     lea rdi, [rel errordoc_401_path]
@@ -62,7 +62,7 @@ startup_checks:
     cmp rax, 1
     je .check_errordoc_403
 
-    LOG_WARNING log_check_errordoc_missing, log_check_errordoc_missing_len
+    LOG_WARNING str_check_errordoc_missing, str_check_errordoc_missing_len
 
 .check_errordoc_403:
     lea rdi, [rel errordoc_403_path]
@@ -75,7 +75,7 @@ startup_checks:
     cmp rax, 1
     je .check_errordoc_404
 
-    LOG_WARNING log_check_errordoc_missing, log_check_errordoc_missing_len
+    LOG_WARNING str_check_errordoc_missing, str_check_errordoc_missing_len
 
 .check_errordoc_404:
     lea rdi, [rel errordoc_404_path]
@@ -88,7 +88,7 @@ startup_checks:
     cmp rax, 1
     je .check_errordoc_405
 
-    LOG_WARNING log_check_errordoc_missing, log_check_errordoc_missing_len
+    LOG_WARNING str_check_errordoc_missing, str_check_errordoc_missing_len
 
 .check_errordoc_405:
     lea rdi, [rel errordoc_405_path]
@@ -101,17 +101,17 @@ startup_checks:
     cmp rax, 1
     je .check_logfile
 
-    LOG_WARNING log_check_errordoc_missing, log_check_errordoc_missing_len
+    LOG_WARNING str_check_errordoc_missing, str_check_errordoc_missing_len
 
 .check_logfile:
-    cmp byte [rel log_file_path], 0
+    cmp byte [rel str_file_path], 0
     je .check_port         ; no file path provided, just skep
 
-    cmp qword [rel log_file], 1
+    cmp qword [rel str_file], 1
     jne .check_port        ; if != 1, its ok
 
     ; if its 1, it means that we failed to open the file
-    LOG_WARNING log_log_file_not_opened, log_log_file_not_opened_len 
+    LOG_WARNING str_str_file_not_opened, str_str_file_not_opened_len 
 
 .check_port:
     mov eax, [rel current_uid]
@@ -122,7 +122,7 @@ startup_checks:
     cmp rax, 1024
     jge .check_chroot
 
-    LOG_WARNING log_check_port_privileged, log_check_port_privileged_len
+    LOG_WARNING str_check_port_privileged, str_check_port_privileged_len
 
 .check_chroot:
     cmp byte [rel use_chroot], 1
@@ -133,7 +133,7 @@ startup_checks:
     je .check_nobody
 
     ; if not root, we won't be able to chroot
-    LOG_WARNING log_chroot_noroot, log_chroot_noroot_len
+    LOG_WARNING str_chroot_noroot, str_chroot_noroot_len
 
 .check_nobody:
     cmp byte [rel be_nobody], 1
@@ -144,10 +144,10 @@ startup_checks:
     je .checks_done
 
     ; if not root, we won't be able to set uid to nobody
-    LOG_WARNING log_nobody_noroot, log_nobody_noroot_len
+    LOG_WARNING str_nobody_noroot, str_nobody_noroot_len
 
 .checks_done:
-    LOG_INFO log_startup_ok, log_startup_ok_len
+    LOG_INFO str_startup_ok, str_startup_ok_len
 
     pop rbp
     ret

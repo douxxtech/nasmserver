@@ -106,7 +106,7 @@ pre_serve:
     BUILDPATH errordoc_401_path, document_root, errordoc_401
     BUILDPATH errordoc_400_path, document_root, errordoc_400
 
-    LOG_DEBUG log_errordoc_paths_rebuilt, log_errordoc_paths_rebuilt_len
+    LOG_DEBUG str_errordoc_paths_rebuilt, str_errordoc_paths_rebuilt_len
 
     jmp .chroot_end
 
@@ -135,11 +135,11 @@ pre_serve:
 
     mov dword [rel current_uid], 65534
 
-    LOG_DEBUG log_nobody_succeeded, log_nobody_succeeded_len
+    LOG_DEBUG str_nobody_succeeded, str_nobody_succeeded_len
     jmp .nobody_end
 
 .nobody_fail:
-    LOG_WARNING log_nobody_failed, log_nobody_failed_len
+    LOG_WARNING str_nobody_failed, str_nobody_failed_len
 
 .nobody_end:
     ret  ; .im_nobody return point
@@ -306,16 +306,16 @@ pre_serve:
     ret  ; return point for .sigint_handler
 
 .fail_socket:
-    LOG_ERR log_fail_socket, log_fail_socket_len
+    LOG_ERR str_fail_socket, str_fail_socket_len
     mov rdi, rax
     EXIT rdi
 
 .fail_setsockopt:
-    LOG_ERR log_fail_setsockopt, log_fail_setsockopt_len
+    LOG_ERR str_fail_setsockopt, str_fail_setsockopt_len
     mov rdi, rax
     EXIT rdi
 
 .fail_bind:
-    LOG_ERR log_fail_bind, log_fail_bind_len
+    LOG_ERR str_fail_bind, str_fail_bind_len
     mov rdi, rax
     EXIT rdi

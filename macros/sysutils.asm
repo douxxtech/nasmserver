@@ -2,11 +2,12 @@
 
 section .data
     sysutils_newline  db 0xa
+    sysutils_ts_fmt    db "%H:%M:%S", 0  ; strftime format
 
-    sysutils_ts_fmt    db "%H:%M:%S", 0              ; strftime format
-    sysutils_ts_buf    db 0, 0, 0, 0, 0, 0, 0, 0, 0  ; "HH:MM:SS\0"
-    sysutils_timespec  dq 0, 0                       ; tv_sec, tv_nsec
-    sysutils_tm_buf    times 64 db 0                 ; struct tm
+section .bss
+    sysutils_ts_buf    resb 9
+    sysutils_timespec  resq 2
+    sysutils_tm_buf    resb 64
 
 ; PRINT buffer, length
 ;   Writes a buffer to stdout.

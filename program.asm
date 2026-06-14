@@ -1,5 +1,7 @@
 ; program.asm - HTTP/1.0 server entry point
 
+%include "./labels/strings.asm"
+
 %include "./macros/envutils.asm"
 %include "./macros/fileutils.asm"
 %include "./macros/httputils.asm"
@@ -113,11 +115,11 @@ _start:
 
     call pre_serve
 
-    cmp byte [rel log_level], 0
+    cmp byte [rel str_level], 0
     je .start_server         ; skip the log if log lvl is none
 
     LF
-    PRINTN log_started_nasmserver, log_started_nasmserver_len
+    PRINTN str_started_nasmserver, str_started_nasmserver_len
 
 .start_server:
     ; start listening for incoming connections
@@ -171,7 +173,7 @@ _start:
     mov rdi, r14
     syscall
 
-    LOG_WARNING log_too_many_concurrent, log_too_many_concurrent_len
+    LOG_WARNING str_too_many_concurrent, str_too_many_concurrent_len
 
     jmp .wait
 
@@ -255,13 +257,13 @@ _start:
     jmp .forbidden                   ; in case i add a new code and forgot to implement it here
 
 .get:
-    LOG_DEBUG log_method_get, log_method_get_len
+    LOG_DEBUG str_method_get, str_method_get_len
 
     mov byte [rel request_type], 0
     jmp .auth_check
 
 .head:
-    LOG_DEBUG log_method_head, log_method_head_len
+    LOG_DEBUG str_method_head, str_method_head_len
 
     mov byte [rel request_type], 1
 
@@ -575,9 +577,9 @@ _start:
     AAPPEND r12, crlf
 
     AAPPEND r12, www_authenticate_header  ; [...] Realm=
-    AAPPEND r12, log_quotation_mark       ; "
+    AAPPEND r12, str_quotation_mark       ; "
     AAPPEND r12, auth_realm               ; Config realm name
-    AAPPEND r12, log_quotation_mark       ; "
+    AAPPEND r12, str_quotation_mark       ; "
 
     AAPPEND r12, crlf
     jmp .header_date
@@ -760,7 +762,7 @@ _start:
     mov rdi, r14
     syscall
 
-    call .log_request
+    call .str_request
 
     call dbg_child_exit
 
@@ -803,32 +805,32 @@ _start:
 .reap_done:
     ret  ; return point for .reap_loop
 
-.log_request:
+.str_request:
     ; parse other headers for the logs
     PARSE_UA_HEADER      request, 8192, user_agent, 1024
     PARSE_REFERER_HEADER request, 8192, referer,    1024
 
     cmp byte [rel use_xri], 1
-    jne .log_req            ; check if we need to use the X-Real-IP header
+    jne .str_req            ; check if we need to use the X-Real-IP header
 
     PARSE_XRI_HEADER request, 8192, real_ip, 39
     
     cmp byte [rel real_ip], 0
-    jne .log_req
+    jne .str_req
 
     mov rsi, client_ip_str
     mov rdi, real_ip
     mov rcx, 16
     rep movsb
 
-.log_req:
-    mov r15, qword [rel log_file]
+.str_req:
+    mov r15, qword [rel str_file]
     LOG_REQUEST_CLFE r15
 
     ret
 
 .shutdown:
-    LOG_INFO log_stopping, log_stopping_len
+    LOG_INFO str_stopping, str_stopping_len
 
     ; wait for all children to finish
     call .reap_loop
@@ -841,5 +843,5 @@ _start:
     EXIT 0
 
 .fail_accept:
-    LOG_ERR log_fail_accept, log_fail_accept_len
+    LOG_ERR str_fail_accept, str_fail_accept_len
     jmp .wait ; child exits

@@ -101,7 +101,7 @@ parse_flags:
     jmp .next_arg
 
 .error_e:
-    PRINTN log_flag_e_error, log_flag_e_error_len
+    PRINTN str_flag_e_error, str_flag_e_error_len
     EXIT 1
 
 
@@ -126,12 +126,12 @@ parse_flags:
     ret
 
 .arg_not_recognized:
-    PRINT log_arg_not_recognized_p1, log_arg_not_recognized_p1_len
+    PRINT str_arg_not_recognized_p1, str_arg_not_recognized_p1_len
 
     STRLEN rsi, rcx
     PRINT rsi, rcx
 
-    PRINTN log_arg_not_recognized_p2, log_arg_not_recognized_p2_len
+    PRINTN str_arg_not_recognized_p2, str_arg_not_recognized_p2_len
     EXIT 1
 
 .done:
