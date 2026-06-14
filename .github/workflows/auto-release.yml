@@ -102,10 +102,3 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/nasmserver:${{ needs.check-and-release.outputs.version }}
             ${{ secrets.DOCKERHUB_USERNAME }}/nasmserver:latest
-
-      - name: Update Docker Hub description
-        uses: peter-evans/dockerhub-description@v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: ${{ secrets.DOCKERHUB_USERNAME }}/nasmserver
