@@ -35,8 +35,8 @@ section .text
     str_check_port_privileged       db "Port < 1024 might require root privileges", 0
     str_check_port_privileged_len   equ $ - str_check_port_privileged - 1
 
-    str_str_file_not_opened         db "Failed to open the provided log file (missing permissions?). STDOUT will be used instead.", 0
-    str_str_file_not_opened_len     equ $ - str_str_file_not_opened - 1
+    str_log_file_not_opened         db "Failed to open the provided log file (missing permissions?). STDOUT will be used instead.", 0
+    str_log_file_not_opened_len     equ $ - str_log_file_not_opened - 1
 
     str_chroot_noroot               db "Not able to chroot since we're not root", 0
     str_chroot_noroot_len           equ $ - str_chroot_noroot - 1

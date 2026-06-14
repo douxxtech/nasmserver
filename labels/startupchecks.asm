@@ -111,7 +111,7 @@ startup_checks:
     jne .check_port        ; if != 1, its ok
 
     ; if its 1, it means that we failed to open the file
-    LOG_WARNING str_str_file_not_opened, str_str_file_not_opened_len 
+    LOG_WARNING str_log_file_not_opened, str_log_file_not_opened_len 
 
 .check_port:
     mov eax, [rel current_uid]
