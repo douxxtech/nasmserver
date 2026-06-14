@@ -32,6 +32,8 @@ DESCRIPTION_FILE="/tmp/release-description.txt"
     echo '```'
     echo "# x64"
     echo "wget https://github.com/douxxtech/nasmserver/releases/download/$VERSION/nasmserver-linux-x64.zip && unzip nasmserver-linux-x64.zip -d nasmserver-$VERSION && (cd nasmserver-$VERSION && sudo ./install) && rm -rf nasmserver-linux-x64.zip nasmserver-$VERSION"
+    echo "# or if using docker"
+    echo "docker pull douxxtech/nasmserver:$VERSION" && docker run -p 8080:8080 douxxtech/nasmserver:$VERSION
     echo ""
     echo "# aarch64"
     echo "wget https://github.com/douxxtech/nasmserver/releases/download/$VERSION/nasmserver-linux-aarch64.zip && unzip nasmserver-linux-aarch64.zip -d nasmserver-$VERSION && (cd nasmserver-$VERSION && sudo ./install) && rm -rf nasmserver-linux-aarch64.zip nasmserver-$VERSION"
