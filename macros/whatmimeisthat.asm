@@ -282,7 +282,7 @@ section .text
     lea  rax, [rsi + 1]  ; rax = ptr to extension (skip the dot)
 
     ; go to the mime_table looking for a match
-    lea  rsi, [mime_table]
+    lea  rsi, [rel mime_table]
 
 %%loop:
     mov  rcx, [rsi]     ; ext_ptr
@@ -321,7 +321,7 @@ section .text
     jmp  %%done
 
 %%unknown:
-    lea  %2, [mime_type_octet]
+    lea  %2, [rel mime_type_octet]
 
 %%done:
     pop rdx

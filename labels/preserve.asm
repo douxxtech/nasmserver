@@ -70,11 +70,11 @@ pre_serve:
 
 .chroot:
     ; chroot into the document_root
-    mov eax, [current_uid]
+    mov eax, [rel current_uid]
     cmp eax, 0
     jne .chroot_end
 
-    cmp byte [use_chroot], 1
+    cmp byte [rel use_chroot], 1
     jne .chroot_end
 
 .do_chroot:
@@ -96,8 +96,8 @@ pre_serve:
     call dbg_chroot_success
 
     ; set document_root to default_docroot (".")
-    mov ax, [default_docroot]
-    mov [document_root], ax
+    mov ax, [rel default_docroot]
+    mov [rel document_root], ax
 
     ; rebuild errordoc paths now that we're inside the jail
     BUILDPATH errordoc_405_path, document_root, errordoc_405
@@ -118,11 +118,11 @@ pre_serve:
 
 .im_nobody:
     ; sets current user to "nobody" for minimal privileges (if root)
-    mov eax, [current_uid]
+    mov eax, [rel current_uid]
     cmp eax, 0
     jne .nobody_end
 
-    cmp byte [be_nobody], 1
+    cmp byte [rel be_nobody], 1
     jne .nobody_end
 
     ; setuid(uid)
@@ -133,7 +133,7 @@ pre_serve:
     cmp rax, 0
     jl .nobody_fail
 
-    mov dword [current_uid], 65534
+    mov dword [rel current_uid], 65534
 
     LOG_DEBUG log_nobody_succeeded, log_nobody_succeeded_len
     jmp .nobody_end
@@ -156,23 +156,23 @@ pre_serve:
     ; setups the SIGCHLD handler (child exits)
 
     ; 0 the struct
-    lea rdi, [sigaction]
+    lea rdi, [rel sigaction]
     mov rcx, 152
     xor al, al
     rep stosb
 
-    lea rax, [.sigchld_handler]
-    mov [sigaction], rax                    ; sa_handler
+    lea rax, [rel .sigchld_handler]
+    mov [rel sigaction], rax                    ; sa_handler
 
-    mov qword [sigaction + 8], 0x14000000   ; sa_flags SA_RESTART | SA_RESTORER
+    mov qword [rel sigaction + 8], 0x14000000   ; sa_flags SA_RESTART | SA_RESTORER
 
-    lea rax, [.sig_restorer]
-    mov [sigaction + 16], rax               ; sa_restorer
+    lea rax, [rel .sig_restorer]
+    mov [rel sigaction + 16], rax               ; sa_restorer
 
     ; rt_sigaction(signum, newact, oldact)
     mov rax, 13
     mov rdi, 17           ; SIGCHLD
-    lea rsi, [sigaction]
+    lea rsi, [rel sigaction]
     xor rdx, rdx
     mov r10, 8            ; "sigsetsize"
     syscall
@@ -207,7 +207,7 @@ pre_serve:
     cmp rax, 0
     jle .sigchld_ok  ; no child reaped, stop
 
-    dec word [process_count]
+    dec word [rel process_count]
 
     call dbg_process_reaped
     jmp .sigchld_handler
@@ -219,23 +219,23 @@ pre_serve:
     ; setups the SIGTERM handler
 
     ; 0 the struct
-    lea rdi, [sigaction]
+    lea rdi, [rel sigaction]
     mov rcx, 152
     xor al, al
     rep stosb
 
-    lea rax, [.sigterm_handler]
-    mov [sigaction], rax                   ; sa_handler
+    lea rax, [rel .sigterm_handler]
+    mov [rel sigaction], rax                   ; sa_handler
 
-    mov qword [sigaction + 8], 0x04000000  ; sa_flag SA_RESTORER
+    mov qword [rel sigaction + 8], 0x04000000  ; sa_flag SA_RESTORER
 
-    lea rax, [.sig_restorer]
-    mov [sigaction + 16], rax              ; sa_restorer
+    lea rax, [rel .sig_restorer]
+    mov [rel sigaction + 16], rax              ; sa_restorer
 
     ; rt_sigaction(signum, newact, oldact)
     mov rax, 13
     mov rdi, 15           ; SIGTERM
-    lea rsi, [sigaction]
+    lea rsi, [rel sigaction]
     xor rdx, rdx
     mov r10, 8            ; "sigsetsize"
     syscall
@@ -257,30 +257,30 @@ pre_serve:
     ret  ; return point for .sigterm_setup
 
 .sigterm_handler:
-    mov byte [shutdown], 1
+    mov byte [rel shutdown], 1
     ret  ; return point for .sigterm_handler
 
 .sigint_setup:
     ; setups the SIGINT handler
 
     ; 0 the struct
-    lea rdi, [sigaction]
+    lea rdi, [rel sigaction]
     mov rcx, 152
     xor al, al
     rep stosb
 
-    lea rax, [.sigint_handler]
-    mov [sigaction], rax                   ; sa_handler
+    lea rax, [rel .sigint_handler]
+    mov [rel sigaction], rax                   ; sa_handler
 
-    mov qword [sigaction + 8], 0x04000000  ; sa_flag SA_RESTORER
+    mov qword [rel sigaction + 8], 0x04000000  ; sa_flag SA_RESTORER
 
-    lea rax, [.sig_restorer]
-    mov [sigaction + 16], rax              ; sa_restorer
+    lea rax, [rel .sig_restorer]
+    mov [rel sigaction + 16], rax              ; sa_restorer
 
     ; rt_sigaction(signum, newact, oldact)
     mov rax, 13
     mov rdi, 2            ; SIGINT
-    lea rsi, [sigaction]
+    lea rsi, [rel sigaction]
     xor rdx, rdx
     mov r10, 8            ; "sigsetsize"
     syscall
@@ -302,7 +302,7 @@ pre_serve:
     ret  ; return point for .sigint_setup
 
 .sigint_handler:
-    mov byte [shutdown], 1
+    mov byte [rel shutdown], 1
     ret  ; return point for .sigint_handler
 
 .fail_socket:

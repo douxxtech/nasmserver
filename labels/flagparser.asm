@@ -23,9 +23,9 @@ section .text
 parse_flags:
     mov rbp, rsp
 
-    mov qword [flag_env_path], 0  ; default: not set
-    mov byte [flag_help], 0
-    mov byte [flag_version], 0
+    mov qword [rel flag_env_path], 0  ; default: not set
+    mov byte [rel flag_help], 0
+    mov byte [rel flag_version], 0
 
     cmp r15, 1                    ; argc = 1: no args passed
     je .done
@@ -66,7 +66,7 @@ parse_flags:
     jmp .arg_not_recognized
 
 .is_h:
-    mov byte [flag_help], 1
+    mov byte [rel flag_help], 1
     call .remove_arg
 
     dec r15
@@ -81,7 +81,7 @@ parse_flags:
     jge .error_e                      ; -e with no value, ignore
 
     mov rax, [rbp + 8 + 8 + rax * 8]  ; argv[rcx+1]
-    mov [flag_env_path], rax
+    mov [rel flag_env_path], rax
 
     ; remove -e from argv
     call .remove_arg
@@ -94,7 +94,7 @@ parse_flags:
     jmp .next_arg
 
 .is_v:
-    mov byte [flag_version], 1
+    mov byte [rel flag_version], 1
     call .remove_arg
 
     dec r15

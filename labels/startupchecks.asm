@@ -12,7 +12,7 @@ startup_checks:
 
 .check_docroot:
     ; document_root: must exist and be a directory
-    lea rdi, [document_root]
+    lea rdi, [rel document_root]
     FILE_EXISTS rdi
 
     cmp rax, 2
@@ -26,7 +26,7 @@ startup_checks:
     ; check that document_root is readable and executable by the current process
     ; access(path, mode)
     mov rax, 21
-    lea rdi, [document_root]
+    lea rdi, [rel document_root]
     mov rsi, 5                ; R_OK | X_OK
     syscall
 
@@ -39,7 +39,7 @@ startup_checks:
 .check_errordocs:
     ; non-fatal: server still starts without errordocs
 
-    lea rdi, [errordoc_400_path]
+    lea rdi, [rel errordoc_400_path]
 
     cmp byte [rdi], 0             ; BUILDPATH leaves it empty if errordoc_400 was empty
     je .check_errordoc_401
@@ -52,7 +52,7 @@ startup_checks:
     LOG_WARNING log_check_errordoc_missing, log_check_errordoc_missing_len
 
 .check_errordoc_401:
-    lea rdi, [errordoc_401_path]
+    lea rdi, [rel errordoc_401_path]
 
     cmp byte [rdi], 0
     je .check_errordoc_403
@@ -65,7 +65,7 @@ startup_checks:
     LOG_WARNING log_check_errordoc_missing, log_check_errordoc_missing_len
 
 .check_errordoc_403:
-    lea rdi, [errordoc_403_path]
+    lea rdi, [rel errordoc_403_path]
 
     cmp byte [rdi], 0
     je .check_errordoc_404
@@ -78,7 +78,7 @@ startup_checks:
     LOG_WARNING log_check_errordoc_missing, log_check_errordoc_missing_len
 
 .check_errordoc_404:
-    lea rdi, [errordoc_404_path]
+    lea rdi, [rel errordoc_404_path]
 
     cmp byte [rdi], 0
     je .check_errordoc_405
@@ -91,7 +91,7 @@ startup_checks:
     LOG_WARNING log_check_errordoc_missing, log_check_errordoc_missing_len
 
 .check_errordoc_405:
-    lea rdi, [errordoc_405_path]
+    lea rdi, [rel errordoc_405_path]
 
     cmp byte [rdi], 0
     je .check_logfile
@@ -104,31 +104,31 @@ startup_checks:
     LOG_WARNING log_check_errordoc_missing, log_check_errordoc_missing_len
 
 .check_logfile:
-    cmp byte [log_file_path], 0
+    cmp byte [rel log_file_path], 0
     je .check_port         ; no file path provided, just skep
 
-    cmp qword [log_file], 1
+    cmp qword [rel log_file], 1
     jne .check_port        ; if != 1, its ok
 
     ; if its 1, it means that we failed to open the file
     LOG_WARNING log_log_file_not_opened, log_log_file_not_opened_len 
 
 .check_port:
-    mov eax, [current_uid]
+    mov eax, [rel current_uid]
     cmp eax, 0
     je .check_chroot
 
-    movzx rax, word [port]
+    movzx rax, word [rel port]
     cmp rax, 1024
     jge .check_chroot
 
     LOG_WARNING log_check_port_privileged, log_check_port_privileged_len
 
 .check_chroot:
-    cmp byte [use_chroot], 1
+    cmp byte [rel use_chroot], 1
     jne .check_nobody
 
-    mov eax, [current_uid]
+    mov eax, [rel current_uid]
     cmp eax, 0
     je .check_nobody
 
@@ -136,10 +136,10 @@ startup_checks:
     LOG_WARNING log_chroot_noroot, log_chroot_noroot_len
 
 .check_nobody:
-    cmp byte [be_nobody], 1
+    cmp byte [rel be_nobody], 1
     jne .checks_done
 
-    mov eax, [current_uid]
+    mov eax, [rel current_uid]
     cmp eax, 0
     je .checks_done
 

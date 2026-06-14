@@ -278,7 +278,7 @@ section .bss
 ;   Clobbers: rax, rdi, rsi, rdx, rcx
 %macro LOG_INFO 2
     ; check if we should log or not
-    cmp byte [log_level], 0  ; log lvl none = skip
+    cmp byte [rel log_level], 0  ; log lvl none = skip
     je %%end
 
 %%log:
@@ -297,7 +297,7 @@ section .bss
 ;   Clobbers: rax, rdi, rsi, rdx, rcx
 %macro LOG_WARNING 2
     ; check if we should log or not
-    cmp byte [log_level], 0  ; log lvl none = skip
+    cmp byte [rel log_level], 0  ; log lvl none = skip
     je %%end
 
 %%log:
@@ -316,7 +316,7 @@ section .bss
 ;   Clobbers: rax, rdi, rsi, rdx, rcx
 %macro LOG_ERR 2
     ; check if we should log or not
-    cmp byte [log_level], 0  ; log lvl none = skip
+    cmp byte [rel log_level], 0  ; log lvl none = skip
     je %%end
 
 %%log:
@@ -336,7 +336,7 @@ section .bss
 ;   Clobbers: rax, rdi, rsi, rdx, rcx
 %macro LOG_DEBUG 2
     ; check if we should log or not
-    cmp byte [log_level], 2  ; log lvl none = skip
+    cmp byte [rel log_level], 2  ; log lvl none = skip
     jne %%end
 
 %%log:
@@ -361,7 +361,7 @@ section .bss
 ;   Clobbers: rax, rbx, rdi, rsi, rdx, rcx, r9
 %macro LOG_PORT 0
     ; check if we should log or not
-    cmp byte [log_level], 0  ; log lvl none = skip
+    cmp byte [rel log_level], 0  ; log lvl none = skip
     je %%end
 
 %%log:
@@ -377,7 +377,7 @@ section .bss
     PRINT log_two_dots, log_two_dots_len           ; ":"
 
     ; port int to ascii
-    movzx rbx, word [port]
+    movzx rbx, word [rel port]
 
     ITOA rbx, log_port_buf, r9
     PRINTN log_port_buf, r9                        ; XXXX
@@ -403,19 +403,19 @@ section .bss
 %macro LOG_REQUEST_CLFE 1
 
     ; check if we should log or not
-    cmp qword [log_file], 1
+    cmp qword [rel log_file], 1
     jne %%pt1                ; log to file = log
 
-    cmp byte [log_level], 0  ; not to file + log lvl none = skip
+    cmp byte [rel log_level], 0  ; not to file + log lvl none = skip
     je %%end
 
 
 %%pt1:
     CLB                      ; clear the log buffer before building
-    lea r8, [log_buffer]     ; r8 = write pointer into log_buffer
+    lea r8, [rel log_buffer]     ; r8 = write pointer into log_buffer
 
     ; pt. 1: ip
-    lea r10, [real_ip]
+    lea r10, [rel real_ip]
     STRLEN r10, rcx
     APPEND r8, r10, rcx
     APPEND r8, log_space, log_space_len
@@ -427,7 +427,7 @@ section .bss
 
 %%pt3:
     ; pt. 3: auth
-    lea r10, [username]
+    lea r10, [rel username]
     STRLEN r10, rcx
 
     cmp rcx, 0                            ; if empty, no auth
@@ -478,7 +478,7 @@ section .bss
 %%pt5:
     APPEND r8, log_quotation_mark, log_quotation_mark_len
 
-    lea r10, [request]
+    lea r10, [rel request]
     xor r9, r9
 
 %%req_scan:
@@ -508,7 +508,7 @@ section .bss
 %%pt6:
     ; pt. 6: status code
 
-    movzx r10, word [last_status]
+    movzx r10, word [rel last_status]
 
     ITOA r10, status_buf, r9
     APPEND r8, status_buf, r9
@@ -573,7 +573,7 @@ section .bss
     APPEND r8, sysutils_newline, 1
 
     ; flush the whole log line in one shot
-    lea rsi, [log_buffer]
+    lea rsi, [rel log_buffer]
     mov rdx, r8
     sub rdx, rsi                           ; length = write pointer - base
     PRINTF %1, log_buffer, rdx

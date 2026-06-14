@@ -24,14 +24,14 @@ section .bss
     ; stat(path, statbuf)
     mov rax, 4
     mov rdi, %1
-    lea rsi, [stat]
+    lea rsi, [rel stat]
     syscall
 
     cmp rax, 0
     jl %%not_found        ; stat failed = doesn't exist
 
     ; check st_mode at offset 24, mask the file type bits
-    mov rax, [stat + 24]
+    mov rax, [rel stat + 24]
     and rax, 0xF000
 
     cmp rax, 0x8000       ; S_IFREG
@@ -88,15 +88,15 @@ section .bss
     ; stat(path, statbuf)
     mov rax, 4
     mov rdi, %1
-    lea rsi, [stat]
+    lea rsi, [rel stat]
     syscall
 
     cmp rax, 0
     jl %%fail
 
     ; some buffers are taken from httputils.asm, should clean that up one day
-    mov rax, [stat + 88]      ; st_mtime is at offset 88 in struct stat
-    mov [date_timespec], rax
+    mov rax, [rel stat + 88]      ; st_mtime is at offset 88 in struct stat
+    mov [rel date_timespec], rax
 
     ; gmtime_r(&tv_sec, &date_tm_buf)
     mov rdi, date_timespec
@@ -135,13 +135,13 @@ section .bss
     ; stat(path, statbuf)
     mov rax, 4
     mov rdi, %1
-    lea rsi, [stat]
+    lea rsi, [rel stat]
     syscall
 
     cmp rax, 0
     jl %%fail
 
-    mov %2, [stat + 48]  ; st_size is at offset 48 in struct stat
+    mov %2, [rel stat + 48]  ; st_size is at offset 48 in struct stat
     jmp %%done
 
 %%fail:

@@ -113,7 +113,7 @@ _start:
 
     call pre_serve
 
-    cmp byte [log_level], 0
+    cmp byte [rel log_level], 0
     je .start_server         ; skip the log if log lvl is none
 
     LF
@@ -124,7 +124,7 @@ _start:
     ; listen(fd, backlog)
     mov rax, 50
     mov rdi, r15
-    movzx rsi, byte [max_requests]
+    movzx rsi, byte [rel max_requests]
     syscall
 
     LOG_PORT
@@ -140,7 +140,7 @@ _start:
     mov rdx, client_addr_len
     syscall
 
-    cmp byte [shutdown], 1
+    cmp byte [rel shutdown], 1
     je .shutdown
 
     cmp rax, -4
@@ -152,15 +152,15 @@ _start:
     mov r14, rax              ; r14 will contain the client file descriptor
 
 .wait_for_slot:
-    movzx rax, word [process_count]
-    cmp ax, [max_requests]
+    movzx rax, word [rel process_count]
+    cmp ax, [rel max_requests]
     jb .do_fork
 
     ; try reaping first in case some just finished
     call .reap_loop
 
-    movzx rax, word [process_count]
-    cmp ax, [max_requests]
+    movzx rax, word [rel process_count]
+    cmp ax, [rel max_requests]
     jb .do_fork
 
     ; still full, drop the connection and warn
@@ -177,8 +177,8 @@ _start:
 
 .do_fork:
     ; save client_addr to stack before forking to avoid race conds
-    push qword [client_addr + 8]
-    push qword [client_addr]
+    push qword [rel client_addr + 8]
+    push qword [rel client_addr]
 
     ; spawn a child process to handle this request
     ; fork()
@@ -203,15 +203,15 @@ _start:
     ITOA r10, current_pid_str, rcx
 
     ; set the socket options, in this case a read timeout on the socket fd
-    movzx rax, word [linger_to]
-    mov qword [drain_timeval], rax  ; tv_sec
+    movzx rax, word [rel linger_to]
+    mov qword [rel drain_timeval], rax  ; tv_sec
 
     ; setsockopt(sockfd, level, optname, optval, optlen)
     mov rax, 54
     mov rdi, r14
     mov rsi, 1                      ; SOL_SOCKET
     mov rdx, 20                     ; SO_RCVTIMEO
-    lea r10, [drain_timeval]
+    lea r10, [rel drain_timeval]
     mov r8, 16
     syscall
 
@@ -226,7 +226,7 @@ _start:
     ; inet_ntop(af, src, dst, size)
     mov edi, 2                      ; AF_INET
     lea rsi, [rsp + 4]              ; pointer to sin_addr (client_addr + 4)
-    lea rdx, [client_ip_str]        ; output buffer
+    lea rdx, [rel client_ip_str]    ; output buffer
     mov ecx, 16                     ; buffer size
     
     call inet_ntop
@@ -257,17 +257,17 @@ _start:
 .get:
     LOG_DEBUG log_method_get, log_method_get_len
 
-    mov byte [request_type], 0
+    mov byte [rel request_type], 0
     jmp .auth_check
 
 .head:
     LOG_DEBUG log_method_head, log_method_head_len
 
-    mov byte [request_type], 1
+    mov byte [rel request_type], 1
 
 .auth_check:
     ; if no auth is configured, go to auth_ok (no auth setuped)
-    cmp byte [auth_username], 0
+    cmp byte [rel auth_username], 0
     je .auth_ok
 
     PARSE_AUTH_HEADER request, 8192, auth, 264
@@ -284,13 +284,13 @@ _start:
 
     ; check if they're the correct ones
 
-    STREQ username, auth_username, rcx
+    STREQ rel username, auth_username, rcx
 
     cmp rcx, 0                                  ; 0 = not equal
     je .unauthorized
 
 
-    STREQ password, auth_password, rcx
+    STREQ rel password, auth_password, rcx
 
     cmp rcx, 0
     je .unauthorized
@@ -299,8 +299,8 @@ _start:
 
 .auth_ok:
     ; prepend document_root so the path is relative to it
-    lea rsi, [document_root]
-    lea rdi, [path]
+    lea rsi, [rel document_root]
+    lea rdi, [rel path]
 
 .copy_docroot:
     mov al, [rsi]
@@ -315,7 +315,7 @@ _start:
     jmp .copy_docroot
 
 .copy_docroot_done:
-    lea rax, [path]
+    lea rax, [rel path]
     sub rdi, rax                                  ; rdi = docroot length
     mov rbx, rdi                                  ; rbx = docroot length for offsetting
 
@@ -332,7 +332,7 @@ _start:
 
     mov byte [path + rax + 1], 0
 
-    STRCUT path, '?'                              ; remove the ?query=string, we won't process it as a static site
+    STRCUT rel path, '?'                              ; remove the ?query=string, we won't process it as a static site
 
     push rax
     call dbg_path_resolved
@@ -342,7 +342,7 @@ _start:
     jne .check_dotfile
 
 .add_index:
-    mov byte [is_dir], 1  ; for later processing
+    mov byte [rel is_dir], 1  ; for later processing
 
     mov al, [rsi]
     mov [rdi], al
@@ -355,12 +355,12 @@ _start:
 
 .check_dotfile:
     ; check if someone is trying to get a dotfile
-    cmp byte [serve_dots], 1  ; if the user want to serve dotfiles, just skip
+    cmp byte [rel serve_dots], 1  ; if the user want to serve dotfiles, just skip
     je .check_exists
 
-    PATH_HAS_DOT path, rcx
+    PATH_HAS_DOT rel path, rcx
 
-    cmp rcx, 0                ; 0 = not found, 1 = found
+    cmp rcx, 0                    ; 0 = not found, 1 = found
     je .check_exists
 
     call dbg_dotfile_blocked
@@ -368,7 +368,7 @@ _start:
 
 .check_exists:
     ; check if the file exists before continuing
-    lea rdi, [path]
+    lea rdi, [rel path]
 
     FILE_EXISTS rdi
 
@@ -386,7 +386,7 @@ _start:
     jmp .forbidden
 
 .add_slash:
-    lea rdi, [path]
+    lea rdi, [rel path]
 
 .find_path_end:
     cmp byte [rdi], 0
@@ -399,20 +399,20 @@ _start:
     mov byte [rdi], '/'
 
     inc rdi                ; rdi now points past the slash (= where index_file goes)
-    lea rsi, [index_file]
+    lea rsi, [rel index_file]
 
     jmp .add_index
 
 .ok:
-    lea r13, [response]
-    lea r12, [response]
-    lea r10, [path]
-    mov [file_to_serve], r10
+    lea r13, [rel response]
+    lea r12, [rel response]
+    lea r10, [rel path]
+    mov [rel file_to_serve], r10
 
     ; check for If-Modified-Since header
     PARSE_IMS_HEADER request, 8192, header_time
 
-    cmp byte [header_time], 0                    ; no ims header = serve
+    cmp byte [rel header_time], 0                ; no ims header = serve
     je .ok_modified
 
     ; otherwise, process the ims thing and eventually return a 304
@@ -423,14 +423,14 @@ _start:
 
     ; stat(path, statbuf)
     mov rax, 4
-    mov rdi, [file_to_serve]
-    lea rsi, [stat]                              ; [stat] is from fileutils.asm
+    mov rdi, [rel file_to_serve]
+    lea rsi, [rel stat]                          ; [stat] is from fileutils.asm
     syscall
 
     cmp rax, 0
     jl .ok_modified
 
-    mov rax, [stat + 88]                         ; st_mtime
+    mov rax, [rel stat + 88]                         ; st_mtime
 
     cmp rax, rbx                                 ; file_mtime >= ims_time?
     jle .not_modified
@@ -441,90 +441,90 @@ _start:
 
     sub r12, r13
 
-    mov word [last_status], 200
+    mov word [rel last_status], 200
     jmp .send
 
 .method_not_allowed:
-    lea r13, [response]
-    lea r12, [response]
-    mov qword [file_to_serve], errordoc_405_path
+    lea r13, [rel response]
+    lea r12, [rel response]
+    mov qword [rel file_to_serve], errordoc_405_path
 
     mov rdi, 405
     call .write_header
 
     sub r12, r13
 
-    mov word [last_status], 405
+    mov word [rel last_status], 405
     jmp .send
 
 .not_found:
-    cmp byte [is_dir], 1                          ; if it's a dir, but with no index file, send a 403 instead 
+    cmp byte [rel is_dir], 1                          ; if it's a dir, but with no index file, send a 403 instead 
     je .forbidden
 
-    lea r13, [response]
-    lea r12, [response]
-    mov qword [file_to_serve], errordoc_404_path
+    lea r13, [rel response]
+    lea r12, [rel response]
+    mov qword [rel file_to_serve], errordoc_404_path
 
     mov rdi, 404
     call .write_header
 
     sub r12, r13
 
-    mov word [last_status], 404
+    mov word [rel last_status], 404
     jmp .send
 
 .forbidden:
-    lea r13, [response]
-    lea r12, [response]
-    mov qword [file_to_serve], errordoc_403_path
+    lea r13, [rel response]
+    lea r12, [rel response]
+    mov qword [rel file_to_serve], errordoc_403_path
 
     mov rdi, 403
     call .write_header
 
     sub r12, r13
 
-    mov word [last_status], 403
+    mov word [rel last_status], 403
     jmp .send
 
 .unauthorized:
-    mov al, [empty]
-    mov [username], al        ; clear the username field to not send a wrong username in logs
+    mov al, [rel empty]
+    mov [rel username], al        ; clear the username field to not send a wrong username in logs
 
-    lea r13, [response]
-    lea r12, [response]
-    mov qword [file_to_serve], errordoc_401_path
+    lea r13, [rel response]
+    lea r12, [rel rel response]
+    mov qword [rel file_to_serve], errordoc_401_path
 
     mov rdi, 401
     call .write_header
 
     sub r12, r13
 
-    mov word [last_status], 401  ;
+    mov word [rel last_status], 401  ;
     jmp .send
 
 .bad_request:
-    lea r13, [response]
-    lea r12, [response]
-    mov qword [file_to_serve], errordoc_400_path
+    lea r13, [rel response]
+    lea r12, [rel response]
+    mov qword [rel file_to_serve], errordoc_400_path
 
     mov rdi, 400
     call .write_header
 
     sub r12, r13
 
-    mov word [last_status], 400
+    mov word [rel last_status], 400
     jmp .send
 
 .not_modified:
-    lea r13, [response]
-    lea r12, [response]
-    mov qword [file_to_serve], empty
+    lea r13, [rel response]
+    lea r12, [rel response]
+    mov qword [rel file_to_serve], empty
     
     mov rdi, 304
     call .write_header
 
     sub r12, r13
-    mov word [last_status], 304
+    mov word [rel last_status], 304
     jmp .send
 
 .write_header:
@@ -609,14 +609,14 @@ _start:
     AAPPEND r12, crlf
 
 .header_pragma:
-    cmp dword [max_age], 0     ; if maxage is < 0, we don't send the pragma: no-cache header
-    ja .header_last_modified   ; jump above (jg unsigned)
+    cmp dword [rel max_age], 0  ; if maxage is < 0, we don't send the pragma: no-cache header
+    ja .header_last_modified    ; jump above (jg unsigned)
 
     AAPPEND r12, pragma_header
     AAPPEND r12, crlf
 
 .header_last_modified:
-    mov rdi, [file_to_serve]
+    mov rdi, [rel file_to_serve]
 
     cmp byte [rdi], 0
     je .header_expires
@@ -629,7 +629,7 @@ _start:
     AAPPEND r12, crlf
 
 .header_expires:
-    mov r8d, dword [max_age]
+    mov r8d, dword [rel max_age]
     HTTP_EXPIRE_DATE r8, header_time
 
     AAPPEND r12, expires_header
@@ -638,7 +638,7 @@ _start:
 
 .header_content_type:
     ; content type detection
-    mov rdi, [file_to_serve]
+    mov rdi, [rel file_to_serve]
 
     cmp byte [rdi], 0
     je .header_content_encoding
@@ -654,7 +654,7 @@ _start:
 
 .header_content_encoding:
     ; content type detection
-    mov rdi, [file_to_serve]
+    mov rdi, [rel file_to_serve]
 
     cmp byte [rdi], 0
     je .header_content_length
@@ -665,7 +665,7 @@ _start:
 
 .header_content_length:
     ; very similar to the previous one
-    mov rdi, [file_to_serve]
+    mov rdi, [rel file_to_serve]
 
     cmp byte [rdi], 0
     je .accept_ranges_header
@@ -697,11 +697,11 @@ _start:
     PRINTF r14, r13, r12      ; send the headers first
 
     ; directly end if it's a HEAD request
-    cmp byte [request_type], 1
+    cmp byte [rel request_type], 1
     je .end
 
     ; serve the file if one was set
-    mov r10, [file_to_serve]
+    mov r10, [rel file_to_serve]
     test r10, r10
     jz .end
 
@@ -748,7 +748,7 @@ _start:
     ; read(fd, buffer, count)
     mov rax, 0
     mov rdi, r14
-    lea rsi, [response]            ; we don't use response anymore, empty it in there
+    lea rsi, [rel response]       ; we don't use response anymore, empty it in there
     mov rdx, 16
     syscall
 
@@ -776,7 +776,7 @@ _start:
     mov rdi, r14
     syscall
 
-    inc word [process_count]
+    inc word [rel process_count]
 
     call .reap_loop
     jmp .wait
@@ -795,7 +795,7 @@ _start:
     cmp rax, 0
     jle .reap_done  ; no child reaped, stop
 
-    dec word [process_count]
+    dec word [rel process_count]
 
     call dbg_process_reaped
     jmp .reap_loop
@@ -808,12 +808,12 @@ _start:
     PARSE_UA_HEADER      request, 8192, user_agent, 1024
     PARSE_REFERER_HEADER request, 8192, referer,    1024
 
-    cmp byte [use_xri], 1
+    cmp byte [rel use_xri], 1
     jne .log_req            ; check if we need to use the X-Real-IP header
 
     PARSE_XRI_HEADER request, 8192, real_ip, 39
     
-    cmp byte [real_ip], 0
+    cmp byte [rel real_ip], 0
     jne .log_req
 
     mov rsi, client_ip_str
@@ -822,7 +822,7 @@ _start:
     rep movsb
 
 .log_req:
-    mov r15, qword [log_file]
+    mov r15, qword [rel log_file]
     LOG_REQUEST_CLFE r15
 
     ret

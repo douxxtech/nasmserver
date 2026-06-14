@@ -68,7 +68,7 @@
     push rdi
 
     lea rsi, [%1]
-    lea rdi, [%2]
+    lea rdi, [rel %2]
 
 %%loop:
     mov al, [rsi]
@@ -111,8 +111,8 @@
     push rsi
     push rdi
 
-    lea rsi, [%1]  ; rsi = read pointer
-    lea rdi, [%3]  ; rdi = write pointer (left buffer)
+    lea rsi, [rel %1]  ; rsi = read pointer
+    lea rdi, [rel %3]  ; rdi = write pointer (left buffer)
     xor %5, %5     ; assume not found
 
 %%copy_left:
@@ -135,7 +135,7 @@
     inc rsi            ; skip the split char
 
     mov byte [rdi], 0  ; null-terminate out_a
-    lea rdi, [%4]      ; switch to right buffer
+    lea rdi, [rel %4]      ; switch to right buffer
 
 %%copy_right:
     mov al, [rsi]
@@ -150,7 +150,7 @@
 
 %%null_term_right:
     mov byte [rdi], 0  ; null-terminate out_a
-    lea rdi, [%4]
+    lea rdi, [rel %4]
     mov byte [rdi], 0  ; out_b is empty
 
 %%done:
@@ -165,10 +165,10 @@
 ;     %2: byte flag to set (e.g. serve_dots)
 ;   Clobbers: nothing
 %macro BOOL_FLAG 2
-    cmp dword [%1], 0x65757274  ; "true"
+    cmp dword [rel %1], 0x65757274  ; "true"
     jne %%done
 
-    mov byte [%2], 1
+    mov byte [rel %2], 1
 
 %%done:
 %endmacro
@@ -256,12 +256,12 @@
 %macro BUILDPATH 3
 
     ; if either part is empty, leave dest empty and bail
-    cmp byte [%2], 0
+    cmp byte [rel %2], 0
     je %%done
-    cmp byte [%3], 0
+    cmp byte [rel %3], 0
     je %%done
 
-    lea r8, [%1]
+    lea r8, [rel %1]
     AAPPEND r8, %2
     AAPPEND r8, %3
     mov byte [r8], 0  ; null-terminate
@@ -337,7 +337,7 @@
 ;   Clobbers: rax, rbx, rcx, rdx, rsi, rdi
 %macro B64_DECODE 3
     lea rsi, [%1] ; rsi = read pointer (src)
-    lea rdi, [%2] ; rdi = write pointer (dst)
+    lea rdi, [rel %2] ; rdi = write pointer (dst)
     xor %3, %3    ; output byte count = 0
 
 %%loop:
@@ -513,7 +513,7 @@
 ;   Clobbers: rax, rbx, rcx, rdx, rdi, rsi
 %macro ITOA 3
     mov rax, %1
-    lea rdi, [%2 + 19]
+    lea rdi, [rel %2 + 19]
 
     mov byte [rdi], 0
     xor %3, %3
@@ -534,7 +534,7 @@
     jnz %%loop
 
     lea rsi, [rdi]
-    lea rdi, [%2]
+    lea rdi, [rel %2]
     mov rcx, %3
 
     rep movsb
@@ -548,7 +548,7 @@
 ;   Clobbers: rax, rbx, rsi
 %macro ATOI 2
     xor %2, %2
-    lea rsi, [%1]
+    lea rsi, [rel %1]
 
 %%loop:
     movzx rbx, byte [rsi]

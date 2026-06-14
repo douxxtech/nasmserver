@@ -142,13 +142,13 @@ section .text
 initial_setup:
     call .build_server_name     ; first of all, build the server name with default_name + version
 
-    cmp byte [flag_help], 1     ; -h passed
+    cmp byte [rel flag_help], 1     ; -h passed
     je .display_help
 
-    cmp byte [flag_version], 1  ; -v passed
+    cmp byte [rel flag_version], 1  ; -v passed
     je .display_version
 
-    mov r14, [flag_env_path]
+    mov r14, [rel flag_env_path]
     test r14, r14
     jz .use_default             ; -e not passed
 
@@ -156,7 +156,7 @@ initial_setup:
     cmp rax, 1
     jne .failed_read_file
 
-    lea rcx, [env_path_buf]
+    lea rcx, [rel env_path_buf]
 
 .copy_argv1:
     mov al, [r14]
@@ -171,8 +171,8 @@ initial_setup:
     jmp .get_uid
 
 .use_default:
-    lea r14, [env_path]
-    lea rcx, [env_path_buf]
+    lea r14, [rel env_path]
+    lea rcx, [rel env_path_buf]
 
 .copy_default:
     mov al, [r14]
@@ -188,7 +188,7 @@ initial_setup:
     ; getuid()
     mov rax, 102
     syscall
-    mov [current_uid], eax
+    mov [rel current_uid], eax
 
 .get_pid:
     GET_PID
@@ -214,19 +214,19 @@ initial_setup:
     ; port: read as ascii, then convert to integer
     ENV_DEFAULT env_path_buf, key_port, word_str_buf, 8, default_port
     ATOI word_str_buf, rax
-    mov word [port], ax
+    mov word [rel port], ax
 
     ENV_DEFAULT env_path_buf, key_maxconns, word_str_buf, 8, default_maxconns  ; reuse word_str_buf, we're done with it
     ATOI word_str_buf, rax
-    mov word [max_requests], ax
+    mov word [rel max_requests], ax
 
     ENV_DEFAULT env_path_buf, key_maxage, max_age_str, 12, default_maxage
     ATOI max_age_str, rax
-    mov dword [max_age], eax
+    mov dword [rel max_age], eax
 
     ENV_DEFAULT env_path_buf, key_linger_to, max_age_str, 12, default_linger_to
     ATOI max_age_str, rax
-    mov dword [linger_to], eax
+    mov dword [rel linger_to], eax
 
     ENV_DEFAULT env_path_buf, key_servedots, serve_dots_str, 5, default_servedots
     BOOL_FLAG serve_dots_str, serve_dots
@@ -251,21 +251,21 @@ initial_setup:
     ENV_DEFAULT env_path_buf, key_bindaddr, bind_addr_str, 16, default_bindaddr
 
     ; build sockaddr from the now-loaded port/interface
-    movzx eax, word [port]
+    movzx eax, word [rel port]
     xchg al, ah                     ; htons(), swap bytes for big-endian
-    mov word [sockaddr + 2], ax
+    mov word [rel sockaddr + 2], ax
 
     ; inet_pton(af, src, dst)
     mov rdi, 2                      ; AF_INET (ipv4)
-    lea rsi, [bind_addr_str]
-    lea rdx, [interface]
+    lea rsi, [rel bind_addr_str]
+    lea rdx, [rel interface]
     call inet_pton
 
     cmp rax, 0
     jle .bad_bind_addr              ; 0 = invalid format, -1 = unsupported af
 
-    mov eax, [interface]
-    mov dword [sockaddr + 4], eax
+    mov eax, [rel interface]
+    mov dword [rel sockaddr + 4], eax
 
     ; build errordoc full paths (document_root + errordoc_*)
     BUILDPATH errordoc_405_path, document_root, errordoc_405
@@ -279,13 +279,13 @@ initial_setup:
     ret                             ; initial_setup return point
 
 .build_server_name:
-    lea r14, [server_w_ver]
+    lea r14, [rel server_w_ver]
     AAPPEND r14, default_name
     AAPPEND r14, version
     ret  ; .build_server_name return point
 
 .open_logfile:
-    cmp byte [log_file_path], 0
+    cmp byte [rel log_file_path], 0
     je .no_log_file
 
     OPEN_FILE_A log_file_path
@@ -293,18 +293,18 @@ initial_setup:
     cmp rax, 0
     jl .no_log_file              ; failed to open / create it
 
-    mov qword [log_file], rax
+    mov qword [rel log_file], rax
 
     jmp .log_file_end
 
 .no_log_file:
-    mov qword [log_file], 1  ; no log file = stdout
+    mov qword [rel log_file], 1  ; no log file = stdout
 
 .log_file_end:
     ret  ; open_logfile len
 
 .parse_log_level:
-    lea rax, [log_level_str]
+    lea rax, [rel log_level_str]
 
     ; "debug"
     cmp dword [rax], 'debu'
@@ -313,7 +313,7 @@ initial_setup:
     cmp byte [rax+4], 'g'
     jne .check_none
 
-    mov byte [log_level], 2
+    mov byte [rel log_level], 2
 
     jmp .log_level_end
 
@@ -322,13 +322,13 @@ initial_setup:
     cmp dword [rax], 'none'
     jne .check_info
 
-    mov byte [log_level], 0
+    mov byte [rel log_level], 0
     
     jmp .log_level_end
 
 .check_info:
     ; "info" or anything unrecognized = 0
-    mov byte [log_level], 1
+    mov byte [rel log_level], 1
     ret
 
 .log_level_end:
