@@ -6,6 +6,23 @@ Read the [blog article](https://aka.dbo.one/nasmserver)!
 > [!CAUTION]
 > **Educational project**: This server likely has more security flaws than there are stars in the universe. It is **not recommended for production use**. Use it to learn, experiment, or have fun.
 
+<details>
+<summary>Table of Contents</summary>
+
+- [How it started](#how-it-started)
+- [What it supports](#what-it-supports)
+- [What it does NOT support](#what-it-does-not-support)
+- [Usage (from a release)](#usage-from-a-release)
+  - [CLI flags](#cli-flags)
+- [Usage (Docker)](#usage-docker)
+- [Install (from a release)](#install-from-a-release)
+- [Build from source](#build-from-source)
+- [Configuration](#configuration)
+- [Dev notes](#dev-notes)
+- [Notes](#notes)
+
+</details>
+
 ## How it started
 
 I started learning NASM on a Monday afternoon, because I was bored in my NoSQL class. After a few self-made exercises (parsing args, string processing, etc.), I built a small HTTP client tool, imagine curl, but without the cool stuff. Then during my blockchain class, I started developing this server. The source grew from there.
@@ -65,6 +82,15 @@ cp .env.example .env
 
 > Ports below 1024 require root or `CAP_NET_BIND_SERVICE`. Either run with `sudo`, or set `PORT` to something above 1024 in your `.env`.
 
+
+### CLI flags
+
+| Flag | Description |
+|---|---|
+| `-h` | Show help and exit |
+| `-v` | Show version and exit |
+| `-e <path>` | Path to the `.env` config file to load |
+
 ## Usage (Docker)
 
 ```bash
@@ -79,14 +105,6 @@ docker run -p 8080:8080 -v /path/to/your/files:/var/www/html douxxtech/nasmserve
 ```
 
 See [DOCKER.md](./DOCKER.md) for more options including custom config files and pinned versions.
-
-### CLI flags
-
-| Flag | Description |
-|---|---|
-| `-h` | Show help and exit |
-| `-v` | Show version and exit |
-| `-e <path>` | Path to the `.env` config file to load |
 
 
 ## Install (from a release)
