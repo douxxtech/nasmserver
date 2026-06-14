@@ -4,22 +4,22 @@ extern localtime_r
 extern strftime
 
 section .data
-    ts_fmt      db "%H:%M:%S ", 0          ; trailing space included
-    timespec    dq 0, 0                    ; tv_sec, tv_nsec (struct timespec)
+    ts_fmt                  db "%H:%M:%S ", 0  ; trailing space included
+    timespec                dq 0, 0            ; tv_sec, tv_nsec (struct timespec)
 
-    rs_fmt      db "%d/%b/%Y:%H:%M:%S %z", 0
+    rs_fmt                  db "%d/%b/%Y:%H:%M:%S %z", 0
 
-    str_prefix_info                 db "[INFO] ", 0
-    str_prefix_info_len             equ $ - str_prefix_info - 1
+    str_prefix_info         db "[INFO] ", 0
+    str_prefix_info_len     equ $ - str_prefix_info - 1
 
-    str_prefix_warning              db "[WARNING] ", 0
-    str_prefix_warning_len          equ $ - str_prefix_warning - 1
+    str_prefix_warning      db "[WARNING] ", 0
+    str_prefix_warning_len  equ $ - str_prefix_warning - 1
 
-    str_prefix_err                  db "[ERROR] ", 0
-    str_prefix_err_len              equ $ - str_prefix_err - 1
+    str_prefix_err          db "[ERROR] ", 0
+    str_prefix_err_len      equ $ - str_prefix_err - 1
 
-    str_prefix_dbg                  db "* ", 0
-    str_prefix_dbg_len              equ $ - str_prefix_dbg - 1
+    str_prefix_dbg          db "* ", 0
+    str_prefix_dbg_len      equ $ - str_prefix_dbg - 1
 
 
 section .bss
