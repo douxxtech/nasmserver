@@ -493,7 +493,7 @@ _start:
     mov [rel username], al        ; clear the username field to not send a wrong username in logs
 
     lea r13, [rel response]
-    lea r12, [rel rel response]
+    lea r12, [rel response]
     mov qword [rel file_to_serve], errordoc_401_path
 
     mov rdi, 401
