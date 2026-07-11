@@ -153,9 +153,16 @@ section .text
     str_fail_sighandler_p1          db "Failed to register the ", 0
     str_fail_sighandler_p2          db ", continuing anyways...", 0
 
+    str_reload_p1                   db "Reload: ", 0
+    str_reload_p2                   db " changed but requires a restart, ignoring", 0
+
+    str_reload_done                 db "Config reloaded", 0
+    str_reload_done_len             equ $ - str_reload_done - 1
+
     str_sighanlder_sigterm          db "SIGTERM", 0
     str_sighanlder_sigint           db "SIGINT", 0
     str_sighanlder_sigchld          db "SIGCHLD", 0
+    str_sighanlder_sighup           db "SIGHUP", 0
 
     str_process_started_p1          db "Main process started by UID ", 0
     str_process_started_p2          db " with PID ", 0
