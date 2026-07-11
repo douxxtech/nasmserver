@@ -41,6 +41,7 @@ I started learning NASM on a Monday afternoon, because I was bored in my NoSQL c
 - Per-request logging with timestamps and client IPs
 - Apache-HTTP-Server-like [combined-format](https://en.wikipedia.org/wiki/Common_Log_Format) logging
 - Persistent request logging to file
+- Hot-reload using SIGHUP
 
 ## What it does NOT support
 
