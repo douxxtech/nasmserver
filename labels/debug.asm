@@ -418,7 +418,7 @@ dbg_startup_infos:
     CLB
     lea r9, [rel log_buffer]
     AAPPEND r9, str_config_servername
-    AAPPEND r9, server_w_ver
+    AAPPEND r9, server_name
     lea rcx, [rel log_buffer]
     sub r9, rcx
     mov rbx, r9
