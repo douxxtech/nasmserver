@@ -14,6 +14,15 @@
 # - Release description: detailed information about the release
 # - =--- END ---=: marks the end of the release
 
+=--- v1.16 ---=
+### What changed
+- Added hot-reload: send `SIGHUP` to the running process (`kill -HUP <pid>`) to reload your `.env` config without restarting the server
+- Settings that need a restart to apply (`DOCUMENT_ROOT`, `BIND_ADDRESS`, `PORT`, `LOG_FILE`, `USE_CHROOT`, `DROP_PRIVILEGES`) are detected on reload: changing them and sending `SIGHUP` logs a warning and keeps the old value instead of applying it
+- Fixed the `Server:` response header being sent empty, it now correctly shows your `SERVER_NAME` value, or `NASMServer/<ver>` if unset
+- Fixed the logged client IP being empty when `USE_X_REAL_IP` was set to `false`
+- Fixed the `Server name:` line in the startup debug logs not reflecting your configured `SERVER_NAME`
+=--- END ---=
+
 =--- v1.15-rev.1 ---=
 ### What changed
 **rev.1**:
