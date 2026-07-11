@@ -233,6 +233,9 @@ dbg_sighandler_success:
     cmp r10, 2
     je .sigint
 
+    cmp r10, 1
+    je .sighup
+
     je dbg_skip              ; if its something unexpected, just skip
 
 .sigchld:
@@ -245,6 +248,10 @@ dbg_sighandler_success:
 
 .sigint:
     AAPPEND r9, str_sighanlder_sigint
+    jmp .end
+
+.sighup:
+    AAPPEND r9, str_sighanlder_sighup
     jmp .end
 
 .end:

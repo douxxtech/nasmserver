@@ -13,6 +13,7 @@
 %include "./labels/debug.asm"
 %include "./labels/flagparser.asm"
 %include "./labels/initialsetup.asm"
+%include "./labels/loadenv.asm"
 %include "./labels/preserve.asm"
 %include "./labels/startupchecks.asm"
 
@@ -63,6 +64,7 @@ section .bss
     ; system
     process_count     resw 1     ; current processes count
     shutdown          resb 1     ; if a shutdown was requested by a signal
+    reload            resb 1     ; if a config reload was requested by a signal
 
     ; network
     client_addr       resb 16
@@ -144,6 +146,9 @@ _start:
 
     cmp byte [rel shutdown], 1
     je .shutdown
+
+    cmp byte [rel reload], 1
+    je .reload
 
     cmp rax, -4
     je .wait                  ; -4 = EINTR, stopped by signal, just restart
@@ -841,6 +846,11 @@ _start:
     syscall
 
     EXIT 0
+
+.reload:
+    mov byte [rel reload], 0
+    call load_config  ; from labels/envreload.asm
+    jmp .wait
 
 .fail_accept:
     LOG_ERR str_fail_accept, str_fail_accept_len

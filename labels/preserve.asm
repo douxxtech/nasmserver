@@ -23,8 +23,9 @@ pre_serve:
     call .sigchld_setup
     call .sigterm_setup
     call .sigint_setup
+    call .sighup_setup
 
-    ret           ; pre_serve return point
+    ret                  ; pre_serve return point
 
 .create_socket:
     ; socket(domain, type, protocol)
@@ -279,10 +280,10 @@ pre_serve:
 
     ; rt_sigaction(signum, newact, oldact)
     mov rax, 13
-    mov rdi, 2            ; SIGINT
+    mov rdi, 2                ; SIGINT
     lea rsi, [rel sigaction]
     xor rdx, rdx
-    mov r10, 8            ; "sigsetsize"
+    mov r10, 8                ; "sigsetsize"
     syscall
 
     mov rdi, rax
@@ -304,6 +305,51 @@ pre_serve:
 .sigint_handler:
     mov byte [rel shutdown], 1
     ret  ; return point for .sigint_handler
+
+.sighup_setup:
+    ; setups the SIGHUP handler (config reload)
+
+    ; 0 the struct
+    lea rdi, [rel sigaction]
+    mov rcx, 152
+    xor al, al
+    rep stosb
+
+    lea rax, [rel .sighup_handler]
+    mov [rel sigaction], rax                   ; sa_handler
+
+    mov qword [rel sigaction + 8], 0x04000000  ; sa_flags SA_RESTORER
+
+    lea rax, [rel .sig_restorer]
+    mov [rel sigaction + 16], rax              ; sa_restorer
+
+    ; rt_sigaction(signum, newact, oldact)
+    mov rax, 13
+    mov rdi, 1                ; SIGHUP
+    lea rsi, [rel sigaction]
+    xor rdx, rdx
+    mov r10, 8                ; "sigsetsize"
+    syscall
+
+    mov rdi, rax
+    mov rax, 1                ; for warn / debug logs
+
+    cmp rdi, 0
+    jl .sighup_fail
+
+    call dbg_sighandler_success
+
+    jmp .sighup_end
+
+.sighup_fail:
+    call warn_sighandler_fail
+
+.sighup_end:
+    ret  ; return point for .sighup_setup
+
+.sighup_handler:
+    mov byte [rel reload], 1
+    ret  ; return point for .sighup_handler
 
 .fail_socket:
     LOG_ERR str_fail_socket, str_fail_socket_len
