@@ -816,13 +816,14 @@ _start:
     PARSE_REFERER_HEADER request, 8192, referer,    1024
 
     cmp byte [rel use_xri], 1
-    jne .str_req            ; check if we need to use the X-Real-IP header
+    jne .use_client_ip        ; check if we need to use the X-Real-IP header
 
     PARSE_XRI_HEADER request, 8192, real_ip, 39
-    
-    cmp byte [rel real_ip], 0
-    jne .str_req
 
+    cmp byte [rel real_ip], 0
+    jne .str_req              ; header was present, keep it
+
+.use_client_ip:
     mov rsi, client_ip_str
     mov rdi, real_ip
     mov rcx, 16
