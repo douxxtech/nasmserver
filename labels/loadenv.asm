@@ -151,7 +151,7 @@ load_config:
 
     ENV_DEFAULT env_path_buf, key_linger_to, max_age_str, 12, default_linger_to
     ATOI max_age_str, rax
-    mov dword [rel linger_to], eax
+    mov word [rel linger_to], ax
 
     ENV_DEFAULT env_path_buf, key_servedots, serve_dots_str, 5, default_servedots
     BOOL_FLAG serve_dots_str, serve_dots

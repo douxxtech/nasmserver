@@ -166,6 +166,7 @@ initial_setup:
     lea r14, [rel server_w_ver]
     AAPPEND r14, default_name
     AAPPEND r14, version
+    mov byte [r14], 0            ; null term
     ret  ; .build_server_name return point
 
 .open_logfile:
